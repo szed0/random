@@ -837,7 +837,7 @@ def cohort_percentile(state, min_cohort=30):
     return keep["influence"]
 
 
-def censoring_horizon(state, frac=0.5):
+def censoring_horizon(state, frac=0.5, min_cohort=5, default=3):
     """H: the age at which the cohort median citation count first reaches
     `frac` of its plateau, estimated from older cohorts. Windows ending
     within H years of the newest patent get no FS - the count there is not
@@ -847,22 +847,46 @@ def censoring_horizon(state, frac=0.5):
         return None
     tab = pd.DataFrame({"year": keep["Year"], "c": keep["count_citing_patents"]}).dropna()
     tab["year"] = tab["year"].astype(int)
-    med = tab.groupby("year")["c"].median().sort_index()
+    grp = tab.groupby("year")["c"]
+    sizes = grp.size()
+    med = grp.median().sort_index()
     stat = "median"
     if med.max() < 2:            # sparse counts: medians are 0 or 1, use the mean
-        med, stat = tab.groupby("year")["c"].mean().sort_index(), "mean"
+        med, stat = grp.mean().sort_index(), "mean"
+    med = med[sizes.reindex(med.index) >= min_cohort]
     smooth = med.rolling(3, center=True, min_periods=1).median()
     ages = (state["max_year"] - med.index).to_numpy()
-    plateau = float(smooth.max()) if len(smooth) else 0.0
-    H = None
-    for age, m in sorted(zip(ages, smooth.to_numpy())):
-        if plateau > 0 and m >= frac * plateau:
-            H = int(age)
-            break
-    state["H"] = H if H is not None else 3
     state["H_stat"] = stat
     state["H_table"] = pd.DataFrame({"cohort": med.index, "age": ages, stat: med.to_numpy(),
-                                     "smoothed": smooth.to_numpy()})
+                                     "smoothed": smooth.to_numpy(),
+                                     "cohort_size": sizes.reindex(med.index).to_numpy()})
+
+    # The horizon is only identifiable when citations actually accrue with age.
+    # On a corpus that is not a complete cohort - a relevance-ranked sample, a
+    # keyword export, anything that over-samples well-cited patents - the curve
+    # is flat or non-monotone and the age at which it "reaches" a plateau is an
+    # artifact. Detect that and say so, rather than silently returning a small
+    # H and disabling the censoring rule the design depends on.
+    rank_corr = 0.0
+    if len(med) >= 5:
+        a = pd.Series(ages).rank()
+        b = pd.Series(smooth.to_numpy()).rank()
+        rank_corr = float(a.corr(b)) if a.std() and b.std() else 0.0
+    if len(med) < 5 or rank_corr < 0.3:
+        state["H"] = default
+        state["H_identified"] = False
+        state["H_rank_corr"] = round(rank_corr, 2)
+        print("CENSORING  accrual is not monotone in age (age/median rank correlation %.2f over %d "
+              "cohorts): the horizon is not identifiable from this corpus. Using the stated default "
+              "H=%d years and saying so." % (rank_corr, len(med), default))
+        return state["H"]
+
+    plateau = float(smooth.max())
+    H = next((int(age) for age, m in sorted(zip(ages, smooth.to_numpy()))
+              if plateau > 0 and m >= frac * plateau), None)
+    state["H"] = H if H is not None else default
+    state["H_identified"] = True
+    state["H_rank_corr"] = round(rank_corr, 2)
     return state["H"]
 
 
@@ -1108,8 +1132,9 @@ def report(path, *, no_keywords=7, show=20, **columns):
     cohort_percentile(state)
     H = censoring_horizon(state)
     k = shrinkage_k(state)
-    print("INFLUENCE cohort percentile (year +/-1, domain when cohort >= 30); censoring horizon H=%s years; "
-          "shrinkage k=%.2f toward mu=%.3f" % (H, k, state["mu"]))
+    print("INFLUENCE cohort percentile (year +/-1, domain when cohort >= 30); censoring horizon H=%s years%s; "
+          "shrinkage k=%.2f toward mu=%.3f"
+          % (H, "" if state.get("H_identified") else " (default, not identifiable here)", k, state["mu"]))
     if cm["domain"]:
         doms = Counter(d for v in keep[cm["domain"]] for d in split_domains(v))
         print("DOMAINS   %s" % ", ".join("%s (%d)" % (d, n) for d, n in doms.most_common(show)))

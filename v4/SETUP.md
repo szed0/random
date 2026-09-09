@@ -10,31 +10,44 @@ ones you want to compare.
 | Name | `trt-pb A` / `trt-pb B` / `trt-pb C`, prefixed with `3T` (three-track) or `IP` (intent-preserving) |
 | Description | one line from the ablation's README |
 | Instructions | the entire contents of that ablation's `SYSTEM_PROMPT.md` — select all, paste |
-| Knowledge | that ablation's knowledge file, and nothing else |
+| Knowledge | **leave empty** |
 
-Attach exactly one knowledge file per Gem. Each file is self-contained; two
-files in one Gem would give the model two definitions of `report` and it will
-pick one silently.
+**Do not put the `.py` in the Gem's Knowledge field.** This is the one thing
+that stops the whole design working, and it is not obvious. A Gem that carries
+a knowledge file is served *without* the Python tool: the model can read the
+module's text but cannot execute anything, so it follows its instructions,
+reports that code execution is unavailable, and stops. Measured on 2026-09-09
+against a real 122-patent export:
+
+| Where the module was | Python tool | Result |
+|---|---|---|
+| Gem Knowledge field | unavailable | "Code execution is currently unavailable in this environment… I must stop here." |
+| Uploaded in the conversation | available | ran `report()` and returned the full analysis |
+
+The refusal is the Gem behaving correctly — it would rather stop than invent
+numbers — but it makes the Gem useless. Upload the module **in the chat**,
+next to the patent export, every time.
 
 ## Requirements
 
-**Code execution must be available**, which in practice means a paid Gemini
-tier. Every design here rests on the model computing rather than estimating;
-without it each Gem is instructed to stop rather than guess.
+**Code execution must be available.** Every design here rests on the model
+computing rather than estimating; without it each Gem is instructed to stop
+rather than guess. On a free-tier account in September 2026 the tool was
+present in ordinary chats and in Gems with no knowledge file, running
+Python 3 with pandas 2.0.0 and numpy 1.26.3 — the environment these files
+assume. Check it in one message: ask for `print(sum(range(1,101)))` and see
+whether a "Show code" block and the answer 5050 come back.
 
 The knowledge files need only `pandas` and `numpy`, both present in the
 sandbox. They do not use spaCy, sentence-transformers, TensorFlow or
 scikit-learn, which are not, and the substitutions that forces are listed in
 each file's docstring and in the top-level README.
 
-**Getting the file into the sandbox.** Knowledge files are visible to the
-model as text; they are not mounted as files. Each system prompt therefore
-tells the model to try `from trt_x import report` and, if that fails, to write
-its knowledge file verbatim into the sandbox first. That works, but it is
-slow for a long file and the model can drift while copying. If you see
-`ImportError` more than once in a session, upload the `.py` file into the
-conversation alongside the data export; a conversation upload is available
-to code directly.
+**Getting the file into the sandbox.** A file uploaded in the conversation is
+available to the code tool directly, so the model only has to copy it into the
+working directory and import it. Upload the module and the export together in
+the first message. Do not ask the model to retype the module: at 35–66 KB it
+will drift, and every system prompt forbids it.
 
 ## The input
 
@@ -58,13 +71,16 @@ looks like a publication number.
 
 ## Checking it works
 
-Upload an export and say "analyse this". A correctly configured Gem will:
+Upload the ablation's `.py` and an export together and say "analyse this". A
+correctly configured Gem will:
 
 1. show the columns and one record, and name the seven column mappings
 2. run `report(...)` and show the printed output verbatim
 3. (Track C only) ask you nothing, but show the ambiguous phrase pairs it
    adjudicated, each with a reason
 4. cite publication numbers for its claims
+
+If it says code execution is unavailable, check the Knowledge field is empty.
 
 If it produces counts without code output, the Instructions field was
 probably truncated on paste; check the tail of the field ends with the
@@ -106,3 +122,35 @@ original could ever have measured; in the intent-preserving A,
   the preposition list has no context; trigram cosine is not an embedding.
   Every file documents where each one acts. The local tool remains the
   reference for the numbers.
+
+## Verified on real data
+
+`tools/fetch_patents.py` builds an ORBIT-shaped export from Google Patents:
+real abstracts, filing dates, CPC subclasses as newline-separated technology
+domains, and real forward citations from each patent's "Cited By" table. A
+122-patent hydrogen and pharmaceutical-chemistry corpus built this way was run
+through all six ablations locally, and through the three-track Track A Gem in
+Gemini. The Gem's numbers matched the local run exactly:
+
+| Measure | Local | Gem |
+|---|---|---|
+| Reciprocal pairs collapsed by defect 19 | 63 | 63 |
+| Occurrences discarded by defect 20 | 49 | 49 |
+| Mean technology domains per patent | 3.09 | 3.09 |
+| Domain-specificity inflation, 90th percentile | 1.24x | 1.24x |
+
+Two findings came out of using real patents rather than synthetic text.
+Defect 7, the citing-string splitter, **did not fire**: Google Patents
+publication numbers carry no internal hyphens or slashes, so the shipped count
+and the corrected count agree exactly, which is the answer to the reference
+document's open question 7 for this export format and not necessarily for an
+ORBIT one. And greedy grouping was far more stable here than on synthetic text
+(adjusted Rand index 0.90 across shuffles, against 0.41), because real
+abstracts share few exact phrases.
+
+Real data also broke the three-track Track C censoring horizon. Cohort median
+citations do not rise with age in a relevance-ranked sample, so the estimator
+found a "plateau" at age zero and silently disabled the censoring rule the
+design depends on. It now tests whether accrual is monotone in age, and when
+it is not, says the horizon is not identifiable and falls back to a stated
+default.

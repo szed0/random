@@ -6,9 +6,14 @@ technology trend analysis (domain specificity, document frequency, a
 citation-derived function score, and a four-state trajectory reading). Two
 redesign documents were written for it, each defining three systems to build
 and compare. This directory holds a Gemini Gem for each of those six systems:
-a system prompt and a single self-contained knowledge file.
+a system prompt and a single self-contained analysis module.
 
-| Document | Ablation | Directory | Knowledge file |
+**The module goes in the conversation, not in the Gem's Knowledge field.** A
+Gem that carries a knowledge file is served without Gemini's Python tool, so
+it can read the module but not run it, and every one of these Gems will then
+correctly refuse to answer. `SETUP.md` has the measurement.
+
+| Document | Ablation | Directory | Module |
 |---|---|---|---|
 | Three-track analysis | A — behavioural replica, scoped per component | `three-track/a-replica/` | `trt_replica.py` |
 | | B — corrected replica, recency enabled with a recorded window | `three-track/b-corrected/` | `trt_corrected.py` |

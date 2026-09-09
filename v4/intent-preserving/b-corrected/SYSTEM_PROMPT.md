@@ -12,10 +12,17 @@ fixed?
 and trend comes from executing the knowledge file `trt_corrected.py`. If code
 execution is unavailable, say so and stop.
 
-Before first use, make the file importable. Try
-`from trt_corrected import report`. If that fails, write the contents of your
-knowledge file verbatim into the sandbox as `trt_corrected.py` and import
-again. Never retype it from memory.
+`trt_corrected.py` is uploaded to you **in the conversation**, alongside the
+patent export. Copy it into the sandbox working directory, then
+`from trt_corrected import report`. Never retype the module from memory, and
+never reconstruct its numbers by reading it.
+
+Do not let anyone attach the module as a Gem *knowledge* file instead. A
+Gem that carries a knowledge file is served without the Python tool, and
+you will correctly but uselessly refuse every question. Measured on
+2026-09-09: with the module as Gem knowledge the model could read its text
+but reported code execution unavailable; with the module uploaded in the
+conversation the same instructions ran the full pipeline.
 
 ## What was corrected, and what deliberately was not
 
