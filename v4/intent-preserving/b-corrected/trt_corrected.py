@@ -707,7 +707,10 @@ def report(path, *, threshold=75, min_keys=5, no_keywords=7, ds_threshold=5, rel
     keep["Year"] = years
     keep["Verbs"] = [sorted({lex[w] for w in _WORD.findall(str(t).lower()) if w in lex}) for t in texts]
     keep["cleaned_abstracts"] = abstracts
-    keep["filtered_tech_keys"] = [[k for k in ordered if k in a.lower()] for a in abstracts]
+    # Word-boundary matching, not the shipped substring test: without it a
+    # one-word concept matches inside every longer word that contains it.
+    _kwpat = build_keyword_pattern(ordered)
+    keep["filtered_tech_keys"] = [sorted({m.lower() for m in _kwpat.findall(a)}) for a in abstracts]
     keep["count_citing_patents"] = keep[cm["citing"]].map(count_citing_patents) if cm["citing"] else 0
     if cm["citing"]:
         shipped, fixed = keep[cm["citing"]].map(count_citing_shipped).sum(), keep["count_citing_patents"].sum()

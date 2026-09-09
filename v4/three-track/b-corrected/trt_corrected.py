@@ -274,6 +274,10 @@ def candidate_phrases(text, lex, lo=1, hi=4):
             tok = m.group(0) if m else ""
             if not tok or tok in _STOP or tok.isdigit():
                 run = _trim_verbs(run, lex)
+                # A single letter is a chemical variable, not a technology.
+                # Multi-word phrases are unaffected; 1-grams must be words.
+                if len(run) == 1 and len(run[0]) < 3:
+                    run = []
                 if lo <= len(run) <= hi and not all(w in _GENERIC for w in run):
                     out.append(" ".join(run))
                 run = []
@@ -703,7 +707,10 @@ def report(path, *, threshold=0.80, no_keywords=7, ds_threshold=5, relationship=
     keep["Year"] = years
     keep["Verbs"] = [sorted({lex[w] for w in _WORD.findall(str(t).lower()) if w in lex}) for t in texts]
     keep["cleaned_abstracts"] = abstracts
-    keep["filtered_tech_keys"] = [[k for k in ordered if k in a.lower()] for a in abstracts]
+    # Word-boundary matching, not the shipped substring test: without it a
+    # one-word concept matches inside every longer word that contains it.
+    _kwpat = build_keyword_pattern(ordered)
+    keep["filtered_tech_keys"] = [sorted({m.lower() for m in _kwpat.findall(a)}) for a in abstracts]
     keep["count_citing_patents"] = keep[cm["citing"]].map(count_citing_patents) if cm["citing"] else 0
     if cm["citing"]:
         shipped = keep[cm["citing"]].map(count_citing_shipped).sum()

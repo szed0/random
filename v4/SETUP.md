@@ -189,3 +189,38 @@ none of them corrupts a number:
 The heavier the module, the longer the first run takes: the A and B tracks
 answered in under a minute, the C tracks took three to five minutes before
 their first output appeared. That is the sandbox executing, not a hang.
+
+## A defect the charts found, and what it moved
+
+Drawing the landscape exposed something the prose reports had hidden. Tracks B
+and C allow single-word concepts, and they matched keyphrases against
+abstracts with a raw substring test. On patent chemistry that put single
+letters at the top of the landscape: `c` in 122 patents, `e` in 122, `n` in
+121, because almost every abstract contains those characters. The text reports
+never foregrounded those rows, so six passing Gem runs went by without anyone
+noticing.
+
+Two fixes, in the four B and C modules only. A one-word candidate must now be
+at least three characters, because a single letter is a chemical variable and
+not a technology. And keyphrase matching uses the word-boundary pattern the B
+tracks already claimed to have repaired, rather than a substring test. Track A
+keeps the substring behaviour: it is the replica, and the shipped tool did
+exactly that.
+
+The landscape now reads `hydrogen`, `compounds`, `treatment`, `formula`,
+`pharmaceutical compositions`, which is a corpus an analyst can argue with.
+
+The fix moves some of the counts in the table above, which were measured
+before it. Against the same 122-patent export the current code gives:
+
+| Module | Was | Now |
+|---|---|---|
+| three-track B | 682 keyphrases, 649 groups | 688 keyphrases, 653 groups |
+| three-track C | 682 concepts, 487 band, 679 resolved, 2081 relations | 688, 504, 685, 2005 |
+| intent-preserving B | unchanged headline counts | 595 keyphrases, 100 primaries |
+| intent-preserving C | 783 concepts, 659 band, 778 resolved, 2586 relations | 781, 674, 776, 2464 |
+
+The Gemini runs verified that each Gem executes its module faithfully and
+reproduces the local numbers exactly. That conclusion is unaffected: it is a
+statement about the sandbox reproducing the code, not about which revision of
+the code was running.

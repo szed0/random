@@ -267,6 +267,9 @@ def candidate_phrases(text, lex, lo=1, hi=5):
                 run = _trim_verbs(run, lex)
                 if len(run) > hi:
                     run = run[-hi:]
+                # A single letter is a chemical variable, not a technology.
+                if len(run) == 1 and len(run[0]) < 3:
+                    run = []
                 if lo <= len(run) and not all(w in _GENERIC for w in run):
                     out.append(" ".join(run))
                 run = []
@@ -601,7 +604,9 @@ def _map_terms(state):
     """Per-patent concept lists on canonical names."""
     keep = state["keep"]
     owner = state["owner"]
-    keep["filtered_tech_keys"] = [sorted({owner.get(k, k) for k in state["keywords"] if k in a.lower()})
+    # Word-boundary matching, not a raw substring test.
+    pat = _pattern(state["keywords"])
+    keep["filtered_tech_keys"] = [sorted({owner.get(m.lower(), m.lower()) for m in pat.findall(a)})
                                   for a in state["abstracts"]]
 
 

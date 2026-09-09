@@ -22,6 +22,31 @@ correctly refuse to answer. `SETUP.md` has the measurement.
 | | B — corrected replica, recency deliberately left off | `intent-preserving/b-corrected/` | `trt_corrected.py` |
 | | C — intent-optimal: evidence layer, Bayesian enrichment with seven estimator ablations, eight trend states, backtest | `intent-preserving/c-intent-optimal/` | `trt_intent.py` |
 
+## The visual layer
+
+trt-pb was a picture tool. It drew a technology relationship graph and a
+four-quadrant trend plot, and the rest of it existed to feed those two
+figures. The six modules above reproduce the analysis but answer in prose,
+which is half the product.
+
+`trt_charts.py` restores the other half and works with all six tracks:
+landscape, relationship graph, prevalence, adoption, the trend plot, the 3D
+trajectory, domain specificity and emergence. Charts render as matplotlib
+images inline in the chat, and the graph and trend calls also write a
+self-contained plotly HTML - the same artifact the shipped tool produced as
+`graph-<Relationship>.html`.
+
+`VISUALS.md` is the prompt that drives it. The point is not the renderer but
+the loop: the analyst sees a numbered table of candidate technologies, says
+which are drafting language and which are two names for one thing, and the
+charts redraw. One, two or three turns, depending on how much the analyst
+already knows.
+
+`SKILL.md` packages the whole thing, including which ablation to reach for.
+Short version: **default to the intent-preserving Track C** for real work, and
+borrow the three-track Track C's censoring horizon if the corpus runs to the
+present day.
+
 Each subdirectory README maps its ablations to the sections of the document
 that define them. `SETUP.md` explains how to build a Gem from any of the six
 and how to run the same corpus through all of them.
