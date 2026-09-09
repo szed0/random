@@ -129,15 +129,28 @@ original could ever have measured; in the intent-preserving A,
 real abstracts, filing dates, CPC subclasses as newline-separated technology
 domains, and real forward citations from each patent's "Cited By" table. A
 122-patent hydrogen and pharmaceutical-chemistry corpus built this way was run
-through all six ablations locally, and through the three-track Track A Gem in
-Gemini. The Gem's numbers matched the local run exactly:
+through **all six ablations, both locally and as Gems in Gemini**, on
+2026-09-09. Every Gem imported its module, executed it, and reported numbers
+identical to the local run, with the single exception noted below.
 
-| Measure | Local | Gem |
+| Ablation | Values checked in Gemini | Result |
 |---|---|---|
-| Reciprocal pairs collapsed by defect 19 | 63 | 63 |
-| Occurrences discarded by defect 20 | 49 | 49 |
-| Mean technology domains per patent | 3.09 | 3.09 |
-| Domain-specificity inflation, 90th percentile | 1.24x | 1.24x |
+| three-track A | rows, span, keyphrases, dictionary, triples by class, graph collapse and discard counts, domains per patent, DS inflation | all match |
+| three-track B | rows, span, verb lemmas, keyphrases, triples, technical verbs, domains per patent, citation ratio | match, except three counts one higher (see below) |
+| three-track C | rows, concepts, ambiguous band, resolved concepts, relations, shrinkage constant, censoring horizon, top domain | all match |
+| intent-preserving A | rows, keyphrases total and unique, primaries, vocabulary constant, triples, nodes, directed pairs, undirected edges, collapsed, discarded, technical verbs, cache-defect moves | all match |
+| intent-preserving B | rows, keyphrases, primaries, floor-sized groups, triples, nodes, edges, technical verbs, cache-defect moves, domains per patent, citation ratio | all match |
+| intent-preserving C | rows, concepts, structured functions, verb lemmas, auto-merges, ambiguous band, resolved concepts, relations, legacy class counts, top domain | all match |
+
+**The one discrepancy, and why it happens.** The three-track B Gem reported
+650 synonym groups, 478 graph nodes and 1,139 edges where the local run gave
+649, 477 and 1,138. Exactly one phrase pair in this corpus has a
+character-trigram cosine of 0.800000, sitting precisely on the `>=` threshold
+the greedy grouping tests. A one-unit-in-the-last-place difference in the dot
+product between numpy builds (1.26.3 in the sandbox, 2.x locally) flips that
+single pair, and one extra group cascades into one extra node and one extra
+edge. The grouping threshold is a knife edge: results are reproducible within
+an environment but not necessarily across them.
 
 Two findings came out of using real patents rather than synthetic text.
 Defect 7, the citing-string splitter, **did not fire**: Google Patents
@@ -154,3 +167,25 @@ found a "plateau" at age zero and silently disabled the censoring rule the
 design depends on. It now tests whether accrual is monotone in age, and when
 it is not, says the horizon is not identifiable and falls back to a stated
 default.
+
+## Failure modes seen while testing
+
+All six Gems were driven through the browser against the same corpus. Three
+things went wrong at least once, and all three are worth recognising because
+none of them corrupts a number:
+
+- **The Gem asks for a file that is already attached.** Seen once on Flash
+  with both files on the first message. Re-attaching in a fresh conversation
+  fixed it. The Gem never invented data; it asked again.
+- **The report stops after the first section.** Seen once: the corpus block
+  printed correctly and the rest was missing. Asking it to continue and paste
+  the remaining printed lines produced them, and they matched the local run.
+- **Code execution lapses mid-conversation and returns.** A Gem that had just
+  run Python reported the tool unavailable a few turns later, then executed
+  `print(2+2)` correctly a minute after that. Whenever the tool was gone the
+  Gems refused rather than estimating, which is the behaviour the instructions
+  ask for.
+
+The heavier the module, the longer the first run takes: the A and B tracks
+answered in under a minute, the C tracks took three to five minutes before
+their first output appeared. That is the sandbox executing, not a hang.
