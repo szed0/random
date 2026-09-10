@@ -50,6 +50,9 @@ class Config:
     title_col: str = "Title"
     abstract_col: str = "Abstract"
     date_col: str = ""                     # optional; blank disables trends
+    domain_col: str = ""                   # optional; blank disables specificity
+    domain_floor: int = 3                  # a term needs this many docs in a domain
+    domain_prior: float = 10.0             # Dirichlet prior strength, alpha-zero
 
     # term extraction
     min_term_words: int = 2
@@ -126,6 +129,9 @@ class Corpus:
     titles: list[str]
     abstracts: list[str]
     years: list[int | None]
+    # One patent can sit in several domains. ORBIT exports them newline
+    # separated in a single cell, so each record holds a list, not a value.
+    domains: list[list[str]] = field(default_factory=list)
     docs: list[str] = field(repr=False, default_factory=list)
 
     def __len__(self) -> int:
@@ -161,6 +167,15 @@ def _year(value: object) -> int | None:
         return n if 1600 <= n <= 2199 else None
     m = _YEAR.search(str(value))
     return int(m.group(1)) if m else None
+
+
+def _split_domains(value: object) -> list[str]:
+    """Domains for one record. Newline separated in ORBIT, comma or semicolon
+    elsewhere, and often a single value."""
+    if not isinstance(value, str):
+        return []
+    parts = re.split(r"[\n,;|]+", value)
+    return [p.strip() for p in parts if p.strip()]
 
 
 def read_table(path_or_buf) -> pd.DataFrame:
@@ -236,12 +251,15 @@ def load(path_or_buf, cfg: Config, frame: pd.DataFrame | None = None) -> Corpus:
         else [""] * len(kept)
     abstracts = [clean(v) for v in kept[cfg.abstract_col]]
     years = [_year(v) for v in kept[cfg.date_col]] if cfg.date_col else [None] * len(kept)
+    domains = ([_split_domains(v) for v in kept[cfg.domain_col]]
+               if cfg.domain_col and cfg.domain_col in kept else [[] for _ in range(len(kept))])
 
     # Titles are short and dense with terminology, and often name a technology
     # the abstract only alludes to. Concatenating means one parse per record
     # instead of two, and document frequency still counts each record once.
     docs = [f"{t}. {a}" if t else a for t, a in zip(titles, abstracts)]
-    return Corpus(titles=titles, abstracts=abstracts, years=years, docs=docs)
+    return Corpus(titles=titles, abstracts=abstracts, years=years, docs=docs,
+                  domains=domains)
 
 
 # --------------------------------------------------------------------------- #
@@ -265,6 +283,57 @@ _FILLER_HEAD = frozenset("""apparatus method system device assembly arrangement
     means unit mechanism structure module equipment machine process""".split())
 _FILLER_MOD = frozenset("""improved novel new enhanced advanced present certain
     various exemplary preferred said such""".split())
+
+
+# British/American and -ise/-ize pairs. Folding both to one form makes the
+# comparison exact, so this can never fire on a pair that merely looks similar.
+_SPELLING_FOLD = (("fibre", "fiber"), ("sulph", "sulf"), ("vapour", "vapor"),
+                  ("aluminium", "aluminum"), ("catalyse", "catalyze"),
+                  ("ise", "ize"), ("yse", "yze"), ("sation", "zation"),
+                  ("ser", "zer"), ("centre", "center"), ("metre", "meter"))
+
+
+def _fold_spelling(term: str) -> str:
+    out = term.lower()
+    for a, b in _SPELLING_FOLD:
+        out = out.replace(a, b)
+    return out
+
+
+def _spelling_variant(a: str, b: str) -> bool:
+    """Whether two forms differ only by spelling convention."""
+    return a.lower() != b.lower() and _fold_spelling(a) == _fold_spelling(b)
+
+
+def _initialism(a: str, b: str) -> bool:
+    """Whether one term is the other's initials: PEM / proton exchange membrane.
+
+    Embeddings score this near zero - an acronym and its expansion share no
+    subwords - and on the benchmark it was the single largest error class, 0/8
+    for the shipped model. The test is exact rather than fuzzy: the letters must
+    match the initials in order, so it cannot merge two unrelated terms that
+    happen to be close in the vector space.
+    """
+    ta, tb = a.lower().split(), b.lower().split()
+    if not ta or not tb:
+        return False
+
+    def initials(words):
+        return "".join(w[0] for w in words if w)
+
+    # "PEM" / "proton exchange membrane"
+    if len(ta) == 1 and len(tb) > 1 and ta[0] == initials(tb):
+        return True
+    if len(tb) == 1 and len(ta) > 1 and tb[0] == initials(ta):
+        return True
+    # "PEM electrolyser" / "proton exchange membrane electrolyser": a shared tail,
+    # and the short form's first token abbreviates the part the long form spells.
+    if ta[-1] == tb[-1] and len(ta) != len(tb):
+        short, long_ = (ta, tb) if len(ta) < len(tb) else (tb, ta)
+        head = long_[:len(long_) - len(short) + 1]
+        if len(short) >= 2 and len(head) >= 2 and short[0] == initials(head):
+            return True
+    return False
 
 
 def _filler(term: str) -> int:
@@ -322,6 +391,35 @@ def _finish(toks) -> str | None:
     return " ".join(words)
 
 
+def _terms_with_spans(chunk) -> list[tuple[str, set[int]]]:
+    """Every term in the chunk, each with the token indices it was built from.
+
+    Relation extraction needs to go the other way from term extraction: given a
+    token the parser has attached a preposition to, which term is that token
+    part of? Recording the spans while the runs are still token objects is the
+    only place that mapping is available.
+    """
+    toks = [t for t in chunk
+            if not t.is_punct and not t.is_space and t.lower_ not in _DET]
+    runs, run = [], []
+    for tok in toks:
+        if _can_continue(tok):
+            run.append(tok)
+            continue
+        if run:
+            runs.append(run)
+        run = []
+    if run:
+        runs.append(run)
+
+    out = []
+    for r in runs:
+        term = _finish(list(r))
+        if term:
+            out.append((term, {t.i for t in r}))
+    return out
+
+
 def _terms_in_chunk(chunk) -> list[str]:
     """Every technology name inside one noun chunk.
 
@@ -342,6 +440,96 @@ def _terms_in_chunk(chunk) -> list[str]:
     if run:
         out.append(run)
     return [term for term in map(_finish, out) if term]
+
+
+# trt-pb's five relation classes, keyed by the preposition that signals them.
+# Kept verbatim so a reader of the original tool recognises the output; "Misc"
+# is what trt-pb assigned to everything unlisted, and is kept for the same
+# reason. The classes are the product's vocabulary, not a linguistic claim.
+RELATION_CLASS = {
+    "of": "Inclusion", "in": "Inclusion", "with": "Inclusion",
+    "from": "Inclusion", "on": "Inclusion", "at": "Inclusion",
+    "within": "Inclusion", "by": "Inclusion",
+    "for": "Objective",
+    "to": "Effect", "across": "Effect", "against": "Effect",
+    "during": "Process", "into": "Process", "through": "Process", "via": "Process",
+    "as": "Likeness",
+}
+
+
+# Verbs that link two technologies directly, with no preposition. trt-pb put
+# "includes" and "utilizes" in its Inclusion list but scanned only adpositions,
+# so it could never match them. Keyed by lemma.
+VERB_RELATION = {
+    "comprise": "Inclusion", "include": "Inclusion", "contain": "Inclusion",
+    "have": "Inclusion", "utilize": "Inclusion", "utilise": "Inclusion",
+    "use": "Inclusion", "incorporate": "Inclusion", "employ": "Inclusion",
+    "couple": "Effect", "connect": "Effect", "attach": "Effect",
+    "link": "Effect", "join": "Effect", "produce": "Effect",
+    "generate": "Effect", "drive": "Effect",
+}
+
+
+def _subject_term(verb, tok2term: dict[int, str]) -> str | None:
+    """The term serving as the verb's subject, if it is one."""
+    for child in verb.children:
+        if child.dep_ in ("nsubj", "nsubjpass"):
+            term = tok2term.get(child.i)
+            if term is not None:
+                return term
+    return None
+
+
+def _source_for(tok, tok2term: dict[int, str]) -> str | None:
+    """The term a relation starts from.
+
+    Usually the preposition modifies a noun and that noun is the source. When it
+    modifies a verb - "the tank is coupled to a bed" - the source is the verb's
+    subject, which is what the sentence is about. A token window cannot make this
+    distinction; it takes whatever words happen to sit to the left.
+    """
+    direct = tok2term.get(tok.head.i)
+    if direct is not None:
+        return direct
+    if tok.head.pos_ in ("VERB", "AUX", "ADJ"):
+        return _subject_term(tok.head, tok2term)
+    return None
+
+
+def _relations_in_doc(doc, tok2term: dict[int, str]) -> list[tuple[str, str, str]]:
+    """(source, class, target) for every link between two known terms.
+
+    Two shapes: a preposition with a `pobj`, and a linking verb with an object.
+    Both read arcs the parser has already computed, so neither costs a pass.
+    """
+    out = []
+    for tok in doc:
+        if tok.dep_ == "prep":
+            source = _source_for(tok, tok2term)
+            if source is None:
+                continue
+            for child in tok.children:
+                if child.dep_ != "pobj":
+                    continue
+                target = tok2term.get(child.i)
+                if target is not None and target != source:
+                    out.append((source, RELATION_CLASS.get(tok.lower_, "Misc"),
+                                target))
+            continue
+
+        kind = VERB_RELATION.get(tok.lemma_.lower())
+        if kind is None or tok.pos_ not in ("VERB", "AUX"):
+            continue
+        source = tok2term.get(tok.head.i) or _subject_term(tok, tok2term)
+        if source is None:
+            continue
+        for child in tok.children:
+            if child.dep_ not in ("dobj", "obj", "attr", "oprd"):
+                continue
+            target = tok2term.get(child.i)
+            if target is not None and target != source:
+                out.append((source, kind, target))
+    return out
 
 
 def _batches(docs: Sequence[str], max_chars: int) -> Iterable[list[str]]:
@@ -368,8 +556,14 @@ BATCH_CHARS = 100_000
 
 
 def candidates(corpus: Corpus, nlp, cfg: Config, progress: Progress = _noop,
-               notes: list[str] | None = None) -> tuple[list[list[str]], Counter]:
-    """Normalised noun-chunk candidates per document, plus their document counts."""
+               notes: list[str] | None = None
+               ) -> tuple[list[list[str]], Counter, list[list[tuple[str, str, str]]]]:
+    """Candidate terms per document, their document counts, and typed relations.
+
+    All three come out of one parse. The relations are raw surface forms at this
+    point; `typed_relations` maps them through the canonical groups once those
+    exist.
+    """
     per_doc: list[list[str]] = []
     total = len(corpus)
 
@@ -387,22 +581,29 @@ def candidates(corpus: Corpus, nlp, cfg: Config, progress: Progress = _noop,
                 f"{limit:,} characters and were truncated — check that the "
                 "abstract column is not pointing at full text")
 
+    per_doc_rel: list[list[tuple[str, str, str]]] = []
     stream = (doc for batch in _batches(texts, min(BATCH_CHARS, limit))
               for doc in nlp.pipe(batch, batch_size=len(batch)))
     for n, doc in enumerate(stream, start=1):
         seen: dict[str, None] = {}
+        tok2term: dict[int, str] = {}
         for chunk in doc.noun_chunks:
-            for term in _terms_in_chunk(chunk):
+            for term, span in _terms_with_spans(chunk):
                 if cfg.min_term_words <= len(term.split()) <= cfg.max_term_words:
                     seen.setdefault(term, None)
+                    for i in span:
+                        tok2term[i] = term
         per_doc.append(list(seen))
+        # Relations come out of the same parse. Extracting them in a second pass
+        # would double the only expensive stage in the pipeline.
+        per_doc_rel.append(_relations_in_doc(doc, tok2term))
         if n % 20 == 0 or n == total:
             progress("terms", n, total)
 
     df = Counter()
     for terms in per_doc:
         df.update(terms)          # document frequency, not raw frequency
-    return per_doc, df
+    return per_doc, df, per_doc_rel
 
 
 def c_values(df: Counter, cfg: Config, n_docs: int = 0) -> dict[str, float]:
@@ -519,6 +720,15 @@ def canonicalise(terms: Sequence[str], vectors: np.ndarray, df: Counter,
             if j is not None:
                 uf.union(i, j)
 
+    # Spelling and abbreviation, which the embedding scores as unrelated. Both
+    # tests are exact, so they run over every pair rather than only near ones -
+    # "MEA" and "membrane electrode assembly" sit at cosine 0.013 and would never
+    # reach any neighbour list.
+    for i in range(n):
+        for j in range(i + 1, n):
+            if _spelling_variant(terms[i], terms[j]) or _initialism(terms[i], terms[j]):
+                uf.union(i, j)
+
     for i in range(n):
         for j in neighbour_sets[i]:
             if i < j and i in neighbour_sets[j] and sim[i, j] >= cfg.similarity_floor:
@@ -534,8 +744,19 @@ def canonicalise(terms: Sequence[str], vectors: np.ndarray, df: Counter,
         # Frequency alone picks the wrong label: "composite pressure vessel
         # apparatus" outnumbers "composite pressure vessel" because every title
         # carries the head noun. Rank boilerplate down first, frequency second.
-        head = max(members, key=lambda i: (-_filler(terms[i]), df[terms[i]],
-                                           -len(terms[i])))
+        # An acronym is a worse label than the words it stands for, whatever the
+        # counts say. Test the relation directly rather than proxying it with
+        # word count: "PEM electrolyser" and "proton exchange membrane
+        # electrolyser" are both multiword, so a length proxy picks the acronym.
+        abbreviated = {
+            i for i in members
+            if any(j != i and _initialism(terms[i], terms[j])
+                   and len(terms[j]) > len(terms[i]) for j in members)}
+        # Then: least boilerplate, most documents, shortest - the last of which
+        # keeps head-truncation groups on the cleaner form.
+        head = max(members, key=lambda i: (
+            i not in abbreviated, -_filler(terms[i]), df[terms[i]],
+            -len(terms[i])))
         name = terms[head]
         variants[name] = sorted(terms[i] for i in members if i != head)
         for i in members:
@@ -584,6 +805,34 @@ def cooccurrence(per_doc: Sequence[Sequence[str]], canonical: dict[str, str],
     if frame.empty:
         return frame
     return (frame.sort_values(["ppmi", "documents"], ascending=False)
+                 .head(cfg.max_edges).reset_index(drop=True))
+
+
+def typed_relations(per_doc_rel: Sequence[Sequence[tuple[str, str, str]]],
+                    canonical: dict[str, str], keep: set[str],
+                    cfg: Config) -> pd.DataFrame:
+    """Relations mapped onto canonical terms and counted by distinct documents.
+
+    Counted by document, not by occurrence: one patent repeating a phrase eight
+    times is one piece of evidence for the relation, not eight. That is the same
+    choice made for term frequency everywhere else in this pipeline.
+    """
+    per_pair: dict[tuple[str, str, str], set[int]] = defaultdict(set)
+    for doc_i, rels in enumerate(per_doc_rel):
+        for source, kind, target in rels:
+            a = canonical.get(source, source)
+            b = canonical.get(target, target)
+            if a == b or a not in keep or b not in keep:
+                continue
+            per_pair[(a, kind, b)].add(doc_i)
+
+    rows = [{"source": a, "relation": kind, "target": b, "documents": len(docs)}
+            for (a, kind, b), docs in per_pair.items()
+            if len(docs) >= cfg.min_edge_docs]
+    frame = pd.DataFrame(rows, columns=["source", "relation", "target", "documents"])
+    if frame.empty:
+        return frame
+    return (frame.sort_values(["documents", "source"], ascending=[False, True])
                  .head(cfg.max_edges).reset_index(drop=True))
 
 
@@ -645,6 +894,109 @@ def trends(per_doc: Sequence[Sequence[str]], corpus: Corpus,
                               .reset_index(drop=True))
 
 
+def trajectory(trend_frame: pd.DataFrame, periods: Sequence[str],
+               min_docs: int = 5) -> pd.DataFrame:
+    """A named state per technology, rather than a bare slope.
+
+        established + rising   -> Growing
+        established + flat/down-> Mature
+        small       + rising   -> Emerging
+        small       + falling  -> Fading
+
+    "Established" is measured against the corpus median rather than a fixed
+    count, so the reading means the same thing on a corpus of 200 patents and one
+    of 40,000. A term with too few documents to support any reading is called
+    Sparse rather than assigned to a quadrant, because the slope of three
+    documents is noise and naming it Emerging would be an invention.
+    """
+    if trend_frame.empty:
+        return trend_frame
+    out = trend_frame.copy()
+    median = max(out["documents"].median(), 1)
+    # A slope is only worth calling if it moves a meaningful share across the
+    # whole observed span; a hair above zero is not a direction.
+    span = max(len(periods) - 1, 1)
+    floor = 0.02 / span
+
+    def state(row):
+        if row["documents"] < min_docs:
+            return "Sparse"
+        rising = row["growth"] > floor
+        falling = row["growth"] < -floor
+        established = row["documents"] >= median
+        if established:
+            return "Growing" if rising else "Mature"
+        if rising:
+            return "Emerging"
+        return "Fading" if falling else "Niche"
+
+    out["state"] = out.apply(state, axis=1)
+    return out
+
+
+def domain_specificity(doc_canon: Sequence[set], corpus: Corpus, keep: set[str],
+                       cfg: Config) -> pd.DataFrame:
+    """What each domain does that the rest of the corpus does not.
+
+    Weighted log-odds with an informative Dirichlet prior (Monroe, Colaresi &
+    Quinn 2008). The naive alternative is a ratio of rates, P(term|domain) /
+    P(term), which trt-pb used and which puts a term seen twice in a small domain
+    at the top of the chart with a lift of 40. The prior pulls a rare term back
+    toward the corpus rate in proportion to how little evidence supports it, and
+    the z-score says how much of the remaining difference is real.
+
+        delta = log[ (y_d + a) / (n_d + a0 - y_d - a) ]
+              - log[ (y_r + a) / (n_r + a0 - y_r - a) ]
+        var   = 1/(y_d + a) + 1/(y_r + a)
+        z     = delta / sqrt(var)
+
+    where a is the term's corpus-wide share of the prior mass a0.
+    """
+    if not cfg.domain_col or not any(corpus.domains):
+        return pd.DataFrame()
+
+    totals = Counter()
+    by_domain: dict[str, Counter] = defaultdict(Counter)
+    for names, doms in zip(doc_canon, corpus.domains):
+        kept = names & keep
+        totals.update(kept)
+        for d in doms:
+            by_domain[d].update(kept)
+
+    grand = sum(totals.values())
+    if not grand:
+        return pd.DataFrame()
+
+    rows = []
+    for domain, counts in by_domain.items():
+        n_d = sum(counts.values())
+        if not n_d:
+            continue
+        for term, y_d in counts.items():
+            if y_d < cfg.domain_floor:
+                continue
+            a = cfg.domain_prior * totals[term] / grand
+            y_r = totals[term] - y_d
+            n_r = grand - n_d
+            num = (y_d + a) / max(n_d + cfg.domain_prior - y_d - a, 1e-9)
+            den = (y_r + a) / max(n_r + cfg.domain_prior - y_r - a, 1e-9)
+            if num <= 0 or den <= 0:
+                continue
+            delta = math.log(num) - math.log(den)
+            var = 1.0 / (y_d + a) + 1.0 / (y_r + a)
+            rows.append({"domain": domain, "term": term, "documents": y_d,
+                         "corpus documents": totals[term],
+                         "log-odds": round(delta, 3),
+                         "z": round(delta / math.sqrt(var), 2)})
+    frame = pd.DataFrame(
+        rows, columns=["domain", "term", "documents", "corpus documents",
+                       "log-odds", "z"])
+    if frame.empty:
+        return frame
+    return (frame.sort_values(["domain", "z"], ascending=[True, False])
+                 .reset_index(drop=True))
+
+
 def latin_share(texts: Sequence[str], sample: int = 300) -> float:
     """Fraction of letters that are ASCII, over a sample of the corpus."""
     letters = ascii_letters = 0
@@ -666,6 +1018,9 @@ class Result:
     terms: pd.DataFrame                    # term, c_value, documents, variants
     edges: pd.DataFrame                    # source, target, documents, ppmi
     trends: pd.DataFrame                   # empty when the file has no dates
+    # source, relation, target, documents - trt-pb's five preposition classes
+    relations: pd.DataFrame = field(default_factory=pd.DataFrame)
+    specificity: pd.DataFrame = field(default_factory=pd.DataFrame)
     canonical: dict[str, str] = field(repr=False, default_factory=dict)
     variants: dict[str, list[str]] = field(repr=False, default_factory=dict)
     per_doc: list[list[str]] = field(repr=False, default_factory=list)
@@ -723,7 +1078,7 @@ def run(path_or_buf, cfg: Config | None = None, *,
             f"only {share:.0%} of the letters are Latin, so this text is probably "
             "not English — the bundled model is English-only and will find little")
 
-    per_doc, df = candidates(corpus, nlp, cfg, progress, notes)
+    per_doc, df, per_doc_rel = candidates(corpus, nlp, cfg, progress, notes)
     scores = c_values(df, cfg, n_docs=len(corpus))
     ranked = sorted(scores, key=lambda t: (-scores[t], t))[:cfg.max_terms]
 
@@ -766,11 +1121,22 @@ def run(path_or_buf, cfg: Config | None = None, *,
 
     progress("relations", 0, 1)
     edges = cooccurrence(per_doc, canonical, keep, cfg)
+    relations = typed_relations(per_doc_rel, canonical, keep, cfg)
     progress("relations", 1, 1)
 
     trend_frame = trends(per_doc, corpus, canonical, keep, cfg) \
         if corpus.has_dates else pd.DataFrame()
+    if not trend_frame.empty:
+        labels = [b[0] for b in periods(corpus.years, cfg.periods)]
+        trend_frame = trajectory(trend_frame, labels)
 
-    return Result(corpus=corpus, terms=terms, edges=edges, trends=trend_frame,
-                  canonical=canonical, variants=variants, per_doc=per_doc,
-                  doc_canon=doc_canon, notes=notes)
+    spec = domain_specificity(doc_canon, corpus, keep, cfg)
+    if cfg.domain_col and spec.empty:
+        notes.append(
+            f"no term reaches {cfg.domain_floor} documents inside any single "
+            f"{cfg.domain_col!r} value, so domain specificity is unavailable")
+
+    return Result(corpus=corpus, terms=terms, edges=edges, relations=relations,
+                  specificity=spec, trends=trend_frame, canonical=canonical,
+                  variants=variants, per_doc=per_doc, doc_canon=doc_canon,
+                  notes=notes)

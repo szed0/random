@@ -93,6 +93,13 @@ Map a **Technology domain** column in the sidebar — CPC, IPC, or any
 classification field — to enable the Domains tab. Without one the other five
 still work.
 
+## Why the grouping works the way it does
+
+`../symmetric-nn/` holds the benchmark behind it: 77 labelled patent term
+pairs, and the finding that no threshold on any symmetric similarity
+separates "one technology" from "two". Run it with `python evaluate.py`
+from that directory.
+
 ## Offline
 
 No network at all: fetch both models on another machine and drop them beside

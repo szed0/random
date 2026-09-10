@@ -1,5 +1,8 @@
 # The symmetric-NN grouping step: what was measured, and what changed
 
+> The step this measures is `canonicalise()` in `../techscope/pipeline.py`.
+> The rules the measurement produced are implemented there.
+
 Canonicalisation asks one narrow question. Given two surface forms extracted
 from the same corpus, do they name **one** technology that should occupy one row
 of the landscape, or **two** that must stay apart?
@@ -11,7 +14,7 @@ alternatives.
 
 ## The benchmark
 
-77 labelled patent term pairs over 120 distinct terms, in `snn/benchmark.py`.
+77 labelled patent term pairs over 120 distinct terms, in `benchmark.py`.
 Labels are the **product** decision, not linguistic synonymy: `alkaline
 electrolyser` and `PEM electrolyser` are close in meaning and must **not** merge,
 because an analyst comparing them is the entire point of the tool. That
@@ -165,7 +168,7 @@ model problem.
 ## Reproducing
 
 ```bash
-python snn/evaluate.py
+python evaluate.py
 ```
 
 Requires `all-MiniLM-L6-v2` and `all-mpnet-base-v2`. The cross-encoder rows need

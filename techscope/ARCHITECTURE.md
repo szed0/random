@@ -399,7 +399,7 @@ sorting; only membership matters, not order.
 
 ### The floor does not separate the classes at all
 
-Measured on 77 labelled patent term pairs (`GROUPING.md`, `snn/`): **no**
+Measured on 77 labelled patent term pairs (`../symmetric-nn/`): **no**
 threshold on any symmetric similarity separates "one technology" from "two". The
 highest-scoring pair in the benchmark is a false one — `type III pressure vessel`
 against `type IV pressure vessel` at 0.830, above genuine synonym pairs at 0.742.
