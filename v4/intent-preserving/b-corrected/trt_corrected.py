@@ -1,7 +1,11 @@
 """Track B - corrected replica: the original architecture and methods, with
 the implementation defects removed.
 
-Attach as a Gemini Gem knowledge file. Runs in the code-execution sandbox:
+Paste this whole module into the chat, then call it. Do NOT put it in the
+Gem's Knowledge field: a Gem carrying a knowledge file is served without
+Gemini's Python tool, so it can read this file but never run it, and the
+Gem will then correctly refuse to answer. Runs in the code-execution
+sandbox:
 standard library, pandas and numpy only.
 
 What this file is

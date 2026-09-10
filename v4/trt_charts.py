@@ -812,6 +812,15 @@ def specificity(state, domain, top=15, png="specificity.png", html=None):
     modC = track_module(state, "ds_table") if track_of(state) == "C" else None
     if modC:
         t = modC.ds_table(state, domain).head(top)
+        if len(t) == 0:
+            # Every term in this domain sits below the frequency floor, which is
+            # a real answer rather than an error: there is nothing this domain
+            # does that the corpus does not. Drawing an empty axis and taking
+            # max() of nothing is not.
+            print("no term in %r clears the frequency floor, so there is nothing "
+                  "specific to chart. Lower the floor with ds_table(state, %r, "
+                  "floor=1) to see the sparse terms." % (domain, domain))
+            return t
         if "enrichment" in t.columns:
             # intent-preserving C: posterior enrichment with a credible interval
             terms = list(t["term"])[::-1]
