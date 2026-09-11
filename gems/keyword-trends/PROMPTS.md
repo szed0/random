@@ -97,9 +97,14 @@ Then pick a number from the menu it just printed.
 
 ## When something looks wrong
 
-**"Code execution is currently unavailable."** The Gem has a knowledge file
-attached. Open the Gem, empty the Knowledge field, save, and start a new chat.
-The module belongs in the message, not in the Gem.
+**It spends a minute printing the module back at you, then hits a
+`SyntaxError`.** The module is in the Gem's Knowledge field. A knowledge file
+never reaches the sandbox as a file, so the Gem is retyping it from memory and
+breaking on its own regexes. Open the Gem, empty the Knowledge field, save, and
+start a new chat. The module belongs in the message.
+
+**"Code execution is currently unavailable."** Same fix - empty the Knowledge
+field. Some Gem configurations are served without the Python tool entirely.
 
 **"I need the files attached."** You did not attach them to that message. The
 sandbox does not remember them from the previous turn.

@@ -21,10 +21,38 @@ never enter the conversation.
 ## Setting the Gem up
 
 Paste `SYSTEM_PROMPT.md` into the Gem's **Instructions** and leave **Knowledge
-empty**. A Gem with anything in its Knowledge field is served without the
-Python tool and can only refuse. `trt_keywords.py` goes in the chat message as
-an ordinary attachment, alongside the export, on **every** turn - the sandbox
-is wiped between messages.
+empty**. `trt_keywords.py` goes in the chat message as an ordinary attachment,
+alongside the export, on **every** turn - the sandbox is wiped between
+messages.
+
+### Why the module is not a knowledge file
+
+Measured, not assumed. A Gem knowledge file is text placed in the model's
+context; it is **not a file in the code sandbox**. `os.listdir('.')` in a Gem
+whose knowledge holds the module shows only what the chat attached. So the
+model's only route to running it is to retype all 31 KB of source into the
+sandbox, from memory, on every turn.
+
+Tested side by side on the same corpus, with instructions identical except for
+where the module lives:
+
+| | module in chat | module in Knowledge |
+| --- | --- | --- |
+| turn 1, keyword menu | correct, ~40 s | correct on the second attempt; the first died mid-generation |
+| turn 2, `6` -> three graphs | correct | **failed** - five retype attempts, no graphs |
+| source reaching the sandbox | byte-identical | retyped, ~4.7 KB of comments and docstrings silently dropped |
+
+The retypes fail on ordinary Python quoting: a regex like `r"^\s*\([^)]*\)\s*\n"`
+written inside a non-raw triple-quoted string becomes an unterminated string
+literal, and the long `STOP` frozenset terminates its own quotes early. The
+model recovers sometimes and not others, and one of its recovery attempts was
+`shutil.copyfile('trt_keywords_3.py', ...)` - reaching for a knowledge file that
+does not exist on disk.
+
+An earlier round of Gems reported "code execution is currently unavailable"
+whenever Knowledge was non-empty. That is no longer what happens: the Python
+tool is present. The conclusion is the same for a different reason - a knowledge
+file cannot be executed, only re-dictated.
 
 ## The six graphs
 

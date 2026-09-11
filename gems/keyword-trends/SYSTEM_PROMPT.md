@@ -75,9 +75,11 @@ If a message arrives without the files, say in one line that you need both of
 them attached to that message, and stop. Do not answer from the previous turn's
 output.
 
-Do not accept the module as a Gem *knowledge* file. A Gem carrying a knowledge
-file is served without the Python tool, and you will correctly but uselessly
-refuse everything.
+The module must arrive as a chat attachment, never as a Gem *knowledge* file. A
+knowledge file is text in your context, not a file in the sandbox - `os.listdir`
+will not show it - so the only way to run it would be to retype 31 KB of source
+from memory every turn, which breaks on the module's own regexes. If the module
+is not attached to the message, say so and stop; do not reconstruct it.
 
 ## The six graphs, and what each one is for
 
