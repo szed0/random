@@ -4,12 +4,22 @@ A replica of the original Streamlit tool's pipeline, rebuilt for an environment
 that has pandas, numpy and matplotlib and nothing else - no spaCy, no
 transformers, no sklearn.
 
-    state = load("export.csv")   -> corpus summary + numbered TECHNICAL TERMS
-    trt(state, 6)                -> term 6: occurrences by year + cumulative,
-                                    then its relationship types and its
-                                    secondary terms, both numbered
-    pair(state, 6, 3)            -> the two together: by year + cumulative
-    triples(state, 6, 3)         -> the T1-preposition-T2 rows behind the bars
+    state = harvest("export.csv")  -> every plausible candidate term, noise and
+                                      all, for a reader to cut down
+    commit(state, [...])           -> the curated vocabulary, saved to vocab.json
+    state = load("export.csv")     -> later turns: reads vocab.json, prints the
+                                      numbered TECHNICAL TERMS menu
+    trt(state, 6)                  -> term 6: occurrences by year + cumulative,
+                                      then its relationship types and its
+                                      secondary terms, both numbered
+    pair(state, 6, 3)              -> the two together: by year + cumulative
+    triples(state, 6, 3)           -> the T1-preposition-T2 rows behind the bars
+
+Extraction is tuned for recall and filtering is left to whoever is reading:
+rules are good at "this is not a noun phrase" and bad at "this is not a
+technology". `harvest` therefore proposes far too much and ranks it by C-value;
+`commit` takes back the list worth keeping. Counting stays in the code, where
+it is deterministic.
 
 What the original did, and what this does instead
 -------------------------------------------------
@@ -41,8 +51,10 @@ What the original did, and what this does instead
 Counting rules, stated once because every number depends on them
 ----------------------------------------------------------------
 * A term occurs in a patent when it appears in the title or abstract as a whole
-  word. Matching is word-bounded and longest-first, so "fuel cell" inside
-  "fuel cell stack" is attributed to the longer term.
+  word, matched with word boundaries. Terms are counted independently, so a
+  patent saying "fuel cell stack" counts for "fuel cell stack" and for "fuel
+  cell" if both are in the vocabulary. Only when mapping the two sides of a
+  TRT triple is the longest matching term preferred.
 * Bars count PATENTS, not mentions: a patent saying "fuel cell" nine times
   counts once.
 * Two terms co-occur when both appear in the same patent. With a relationship
@@ -235,11 +247,22 @@ _TOKEN = re.compile(r"[A-Za-z][A-Za-z0-9]*(?:[-'’][A-Za-z0-9]+)*")
 _SENT = re.compile(r"[.!?]+")
 
 
-def _is_head_noun(word):
-    """Can this word be the head of a technical term?"""
-    if len(word) < 3 or word in FUNCTION or word in VERB:
+def _is_head_noun(word, loose=False):
+    """Can this word be the head of a technical term?
+
+    `loose` is the harvest setting: it keeps any -ing or -ed word that is not
+    outright drafting language, on the grounds that a reader downstream will
+    throw away "operating" far more cheaply than the corpus can hand back a
+    "reforming" it never proposed. The strict setting is the original's
+    `<J.*>*<N.*>+` behaviour, used when no curated vocabulary exists.
+    """
+    if len(word) < 3 or word in FUNCTION:
         return False
     if word.endswith("ly"):
+        return False
+    if loose:
+        return word not in BOILER_PARTICIPLE
+    if word in VERB:
         return False
     if word.endswith("ing"):
         return word in NOUN_ING
@@ -274,20 +297,101 @@ def chunks(text, min_words=2, max_words=4):
     "oxide fuel cell stack").
     """
     out = []
+    for run in _runs(text, loose=False):
+        if len(run) >= min_words:
+            take = run[-max_words:] if len(run) > max_words else run
+            if not all(w in GENERIC for w in take):
+                out.append(" ".join(take))
+    return out
+
+
+def _runs(text, loose=False):
+    """Maximal noun-phrase runs, each already trimmed to end on its head."""
+    out = []
     for sentence in _SENT.split(text.lower()):
         for piece in re.split(r"[,:;()\[\]/\"]", sentence):
             run = []
             for token in _TOKEN.findall(piece) + [""]:
-                if token and (_is_modifier(token) or _is_head_noun(token)):
+                if token and (_is_modifier(token) or _is_head_noun(token, loose)):
                     run.append(token)
                     continue
-                while run and not _is_head_noun(run[-1]):
+                while run and not _is_head_noun(run[-1], loose):
                     run.pop()
-                if len(run) >= min_words:
-                    take = run[-max_words:] if len(run) > max_words else run
-                    if not all(w in GENERIC for w in take):
-                        out.append(" ".join(take))
+                if run:
+                    out.append(run)
                 run = []
+    return out
+
+
+_ACRONYM = re.compile(r"\b([A-Z][A-Z0-9]{1,5})\b")
+_COMPOUND = re.compile(r"\b([A-Za-z][A-Za-z0-9]*(?:[-‑][A-Za-z0-9]+)+)\b")
+
+
+def candidates(text, raw=None, max_words=5):
+    """Everything that could be a technical term, for a reader to cut down.
+
+    Recall first. Three sources:
+
+    * every sub-phrase of each noun-phrase run that ends on a noun head, so
+      "steam reforming feed" proposes "steam reforming feed", "reforming feed",
+      "feed", "steam reforming" and "steam". Suffixes alone are not enough: a
+      real term is often a prefix of a longer chunk, and "steam reforming"
+      would otherwise never be proposed at all. The nesting is also what
+      `_c_value` needs.
+    * acronyms, from the original casing: an all-caps token is invisible to a
+      lower-cased chunker but is usually the most specific term in the text.
+    * hyphenated and alphanumeric compounds, likewise from the original text.
+    """
+    out = []
+    for run in _runs(text, loose=True):
+        for j, head in enumerate(run):
+            if not _is_head_noun(head, loose=True):
+                continue
+            for i in range(max(0, j - max_words + 1), j + 1):
+                span = run[i:j + 1]
+                if all(w in GENERIC for w in span):
+                    continue
+                if len(span) == 1 and (len(span[0]) < 4 or span[0] in GENERIC):
+                    continue
+                out.append(" ".join(span))
+    if raw:
+        for m in _ACRONYM.findall(raw):
+            if m.lower() not in FUNCTION:
+                out.append(m.lower())
+        for m in _COMPOUND.findall(raw):
+            w = m.lower()
+            if w not in FUNCTION and len(w) >= 4:
+                out.append(w)
+    return out
+
+
+def _c_value(df, tf):
+    """Termhood by C-value: frequency, damped by length and by nesting.
+
+    A phrase that only ever turns up inside a longer phrase is a fragment of
+    that phrase, not a term of its own, so its own frequency is discounted by
+    how often its parents account for it. "cell" inside "fuel cell" and "fuel
+    cell stack" sinks; "fuel cell", which also stands alone, does not.
+    """
+    longer = defaultdict(list)
+    by_len = defaultdict(list)
+    for t in tf:
+        by_len[len(t.split())].append(t)
+    for n, terms_n in by_len.items():
+        for t in terms_n:
+            for m in range(n + 1, max(by_len) + 1):
+                for parent in by_len.get(m, ()):
+                    if t in parent and re.search(r"\b%s\b" % re.escape(t), parent):
+                        longer[t].append(parent)
+    out = {}
+    for t, f in tf.items():
+        n = len(t.split())
+        weight = math.log2(n) if n > 1 else 1.0
+        parents = longer.get(t)
+        if parents:
+            out[t] = weight * (f - sum(tf[p] for p in parents) / len(parents))
+        else:
+            out[t] = weight * f
     return out
 
 
@@ -390,9 +494,195 @@ def _triples(text):
 # step 1 - load
 # --------------------------------------------------------------------------- #
 
+VOCAB_FILE = "vocab.json"
+
+
+def harvest(path, min_patents=2, top=250, floor=4, max_words=5,
+            abstract=None, date=None, title=None):
+    """Step 1: pull out every plausible technical term, for a reader to cut.
+
+    This is deliberately over-inclusive. It is the opposite trade from
+    `load()`: that one uses a strict chunker and accepts the terms it misses,
+    this one accepts noise and expects `commit()` to remove it. Verbs,
+    fragments and category words will be in the list; that is the point.
+
+    Prints the candidates with three statistics - patents, mentions and
+    C-value - and returns the state. Nothing is counted for real until a
+    vocabulary is committed.
+    """
+    state = _read(path, abstract, date, title)
+    texts, raws = state["texts"], state["raws"]
+
+    df, tf = Counter(), Counter()
+    per_doc = []
+    for t, r in zip(texts, raws):
+        found = [_normalise(c) for c in candidates(t, r, max_words)]
+        seen = set(found)
+        per_doc.append(seen)
+        df.update(seen)
+        tf.update(found)
+
+    pool = {t for t, c in df.items() if c >= min_patents}
+    tf = Counter({t: tf[t] for t in pool})
+    df = Counter({t: df[t] for t in pool})
+    cv = _c_value(df, tf)
+
+    n = max(len(texts), 1)
+    score = {k: tf[k] * math.log(n / (1 + df[k])) for k in df}
+    ranked = sorted(pool, key=lambda t: (-cv[t], -df[t], t))
+    state.update({"per_doc": per_doc, "df": df, "tf": tf, "cvalue": cv,
+                  "score": score, "pool": ranked, "vocab": ranked,
+                  "triples": None})
+
+    _print_corpus(state)
+    print("HARVEST  %d candidate terms in at least %d patents "
+          "(of %d proposed). Ranked by C-value."
+          % (len(ranked), min_patents, len(per_doc) and len(set().union(*per_doc))))
+
+    # C-value discounts a phrase that lives inside longer ones, which is right
+    # for fragments and wrong for a real term that happens to be nested -
+    # "steam reforming" sits inside "steam reforming feed" and falls to rank
+    # 435. So anything common enough is shown regardless of where C-value put
+    # it, and the reader decides.
+    head = set(ranked[:top])
+    shown = [t for t in ranked if t in head or df[t] >= floor]
+    state["candidate_listing"] = shown
+    print("\nCANDIDATES  (%d shown of %d: top %d by C-value, plus everything in "
+          "%d+ patents)" % (len(shown), len(ranked), top, floor))
+    width = max((len(t) for t in shown), default=10)
+    for i, t in enumerate(shown, start=1):
+        print("%4d  %-*s  %3d pat  %3d men  c=%6.1f"
+              % (i, width, t, df[t], tf[t], cv[t]))
+    print("\nThis list is raw. Read it, drop everything that is not a "
+          "technology - verbs,\nfragments, category words, legal boilerplate - "
+          "and call:")
+    print('    commit(state, ["term one", "term two", ...])')
+    print("Keep the terms verbatim as printed. commit() saves them to %s, so "
+          "later turns\nskip straight to load()." % VOCAB_FILE)
+    return state
+
+
+def commit(state, keep=None, drop=None, top=40, path=VOCAB_FILE):
+    """Step 2: lock in the curated vocabulary and print the real menu.
+
+    `keep` is a list of term strings as printed by `harvest`, or of candidate
+    row numbers. Pass `drop` instead to keep everything shown except those.
+    Everything counted from here on - every bar, every triple - uses only the
+    committed terms.
+    """
+    listing = state.get("candidate_listing") or state.get("pool") or []
+    if keep is None:
+        if drop is None:
+            raise SystemExit("commit() needs keep=[...] or drop=[...].")
+        cut = {_normalise(str(d).lower().strip()) for d in drop
+               if not isinstance(d, (int, np.integer))}
+        cut |= {listing[int(d) - 1] for d in drop
+                if isinstance(d, (int, np.integer)) and 1 <= int(d) <= len(listing)}
+        keep = [t for t in listing if t not in cut]
+    chosen, unknown = [], []
+    for item in keep:
+        if isinstance(item, (int, np.integer)):
+            n = int(item)
+            if 1 <= n <= len(listing):
+                chosen.append(listing[n - 1])
+            else:
+                unknown.append(item)
+            continue
+        t = _normalise(str(item).lower().strip())
+        if t in state["df"]:
+            chosen.append(t)
+        else:
+            unknown.append(item)
+
+    seen, vocab = set(), []
+    for t in chosen:
+        if t not in seen:
+            seen.add(t)
+            vocab.append(t)
+
+    if unknown:
+        print("NOT FOUND  %d of your terms are not candidates and were skipped: %s"
+              % (len(unknown), ", ".join(map(repr, unknown[:8]))))
+    if not vocab:
+        raise SystemExit("nothing was kept; commit() needs at least one term "
+                         "from the candidate list.")
+
+    pool = state.get("pool") or []
+    print("VOCABULARY  kept %d, dropped %d of %d candidates."
+          % (len(vocab), max(len(pool) - len(vocab), 0), len(pool)))
+
+    # Recount exactly as load() will, so the menu printed here and the menu
+    # printed next turn carry the same row numbers.
+    df, tf, per_doc, ranked = _recount(state["texts"], vocab)
+    n = max(len(state["texts"]), 1)
+    state.update({"df": df, "tf": tf, "per_doc": per_doc, "vocab": ranked,
+                  "score": {k: tf[k] * math.log(n / (1 + df[k])) for k in df},
+                  "curated": True,
+                  "triples": None})   # the relationship index depends on the vocabulary
+    vocab = ranked
+    try:
+        import json
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(state["vocab"], fh, indent=1)
+        print("Saved to %s - later turns can call load() and skip the harvest."
+              % path)
+    except Exception as exc:
+        print("Could not save %s (%s). Pass the list to load(vocab=[...]) "
+              "instead." % (path, exc))
+    terms(state, top=top)
+    return state
+
+
 def load(path, top=40, min_patents=2, min_words=2, max_words=4,
-         abstract=None, date=None, title=None):
-    """Read the export, extract technical terms, print the numbered menu."""
+         abstract=None, date=None, title=None, vocab=VOCAB_FILE):
+    """Read the export and print the numbered menu.
+
+    If a curated vocabulary exists - the file `commit()` wrote, or a list
+    passed as `vocab` - it is used verbatim. Otherwise the strict chunker runs
+    and you get the uncurated menu, which is the fallback, not the intent.
+    """
+    state = _read(path, abstract, date, title)
+    texts, raws = state["texts"], state["raws"]
+
+    curated = _read_vocab(vocab)
+    if curated:
+        df, tf, per_doc, ranked = _recount(texts, curated)
+    else:
+        df, tf, per_doc = Counter(), Counter(), []
+        for text in texts:
+            found = [_normalise(c) for c in chunks(text, min_words, max_words)]
+            seen = set(found)
+            per_doc.append(seen)
+            df.update(seen)
+            tf.update(found)
+        ranked = [k for k, c in df.items() if c >= min_patents]
+
+    n = max(len(texts), 1)
+    # TF-IDF the way the original's TfidfVectorizer summed it: the corpus-wide
+    # term frequency against the log-damped document frequency.
+    score = {k: tf[k] * math.log(n / (1 + df[k])) for k in df}
+    if not curated:
+        ranked.sort(key=lambda k: (-df[k], -score[k], k))
+
+    state.update({"per_doc": per_doc, "df": df, "tf": tf, "score": score,
+                  "vocab": ranked, "curated": bool(curated), "triples": None})
+
+    _print_corpus(state)
+    if curated:
+        print("VOCABULARY  %d curated terms from %s; %d of them occur in this "
+              "corpus." % (len(curated), vocab if isinstance(vocab, str) else "the list",
+                           len(ranked)))
+    else:
+        print("TERMS    %d noun phrases of %d-%d words in at least %d patents."
+              % (len(ranked), min_words, max_words, min_patents))
+        print("         Uncurated - run harvest() then commit() for a "
+              "filtered vocabulary.")
+    terms(state, top=top)
+    return state
+
+
+def _read(path, abstract=None, date=None, title=None):
+    """Columns, text and dates. Shared by harvest() and load()."""
     frame = (pd.read_excel(path) if str(path).lower().endswith((".xlsx", ".xls"))
              else pd.read_csv(path))
     cols = list(frame.columns)
@@ -403,55 +693,79 @@ def load(path, top=40, min_patents=2, min_words=2, max_words=4,
     if c_abs is None and c_ttl is None:
         raise SystemExit("no abstract or title column. Columns: %s"
                          % ", ".join(map(str, cols)))
-
     keep = (frame[frame[c_abs].notna()].reset_index(drop=True) if c_abs
             else frame.reset_index(drop=True))
-    texts = [clean(("%s. %s" % (r[c_ttl], r[c_abs])) if c_ttl and c_abs
-                   else (r[c_ttl] if c_ttl else r[c_abs]))
-             for _, r in keep.iterrows()]
+    raws = [("%s. %s" % (r[c_ttl], r[c_abs])) if c_ttl and c_abs
+            else str(r[c_ttl] if c_ttl else r[c_abs])
+            for _, r in keep.iterrows()]
+    texts = [clean(r) for r in raws]
     years = [year_of(v) for v in keep[c_dat]] if c_dat else [None] * len(keep)
     pubs = ([str(v) for v in keep[c_pub]] if c_pub
             else ["row%d" % i for i in range(len(keep))])
+    return {"frame": keep, "texts": texts, "raws": raws, "years": years,
+            "pubs": pubs, "rows": len(frame),
+            "columns": {"title": c_ttl, "abstract": c_abs,
+                        "date": c_dat, "pubno": c_pub}}
 
-    # Document frequency and term frequency over the chunked candidates.
-    df = Counter()
-    tf = Counter()
-    per_doc = []
-    for t in texts:
-        found = [_normalise(c) for c in chunks(t, min_words, max_words)]
-        seen = set(found)
-        per_doc.append(seen)
-        df.update(seen)
-        tf.update(found)
 
-    n = max(len(texts), 1)
-    # TF-IDF the way the original's TfidfVectorizer summed it: the corpus-wide
-    # term frequency against the log-damped document frequency.
-    score = {k: tf[k] * math.log(n / (1 + df[k])) for k in df}
-
-    ranked = [k for k, c in df.items() if c >= min_patents]
-    ranked.sort(key=lambda k: (-df[k], -score[k], k))
-
+def _print_corpus(state):
+    years, cols = state["years"], state["columns"]
     dated = sum(1 for y in years if y)
     span = [y for y in years if y]
     print("CORPUS   %d rows, %d with text, %d with a usable year%s"
-          % (len(frame), len(keep), dated,
+          % (state["rows"], len(state["texts"]), dated,
              (" (%d-%d)" % (min(span), max(span))) if span else ""))
     print("COLUMNS  title=%r abstract=%r date=%r id=%r"
-          % (c_ttl, c_abs, c_dat, c_pub))
-    print("TERMS    %d noun phrases of %d-%d words in at least %d patents"
-          % (len(ranked), min_words, max_words, min_patents))
-    if c_dat and dated < len(keep):
+          % (cols["title"], cols["abstract"], cols["date"], cols["pubno"]))
+    if cols["date"] and dated < len(state["texts"]):
         print("NOTE     %d patents have no usable year and are left out of the "
-              "year charts." % (len(keep) - dated))
+              "year charts." % (len(state["texts"]) - dated))
 
-    state = {"frame": keep, "texts": texts, "years": years, "pubs": pubs,
-             "per_doc": per_doc, "df": df, "score": score, "vocab": ranked,
-             "columns": {"title": c_ttl, "abstract": c_abs,
-                         "date": c_dat, "pubno": c_pub},
-             "triples": None}
-    terms(state, top=top)
-    return state
+
+def _recount(texts, vocab):
+    """Count a curated vocabulary against the corpus, and order it.
+
+    Both `commit()` and `load()` go through here, and they must: the harvest
+    counts a term only where its chunker proposed it, while this counts every
+    word-bounded occurrence, so the two disagree. When commit() numbered the
+    menu from harvest counts and load() renumbered it from these, row 10 was
+    "fuel cell system" in one turn and "cancer" in the next - a silently wrong
+    chart. One counter, one ordering, both paths.
+    """
+    curated, seen_terms = [], set()
+    for v in vocab:
+        t = _normalise(str(v).lower().strip())
+        if t and t not in seen_terms:
+            seen_terms.add(t)
+            curated.append(t)
+    pat = {v: _pattern([v]) for v in curated}
+    df, tf, per_doc = Counter(), Counter(), []
+    for text in texts:
+        hits = {v for v in curated if pat[v].search(text)}
+        per_doc.append(hits)
+        df.update(hits)
+        for v in hits:
+            tf[v] += len(pat[v].findall(text))
+    ranked = sorted((v for v in curated if df[v] >= 1),
+                    key=lambda k: (-df[k], k))
+    return df, tf, per_doc, ranked
+
+
+def _read_vocab(vocab):
+    """A committed vocabulary: a list, a path, or nothing."""
+    if vocab is None:
+        return None
+    if isinstance(vocab, (list, tuple, set)):
+        return list(vocab)
+    try:
+        import json, os
+        if not os.path.exists(vocab):
+            return None
+        with open(vocab, encoding="utf-8") as fh:
+            got = json.load(fh)
+        return list(got) if got else None
+    except Exception:
+        return None
 
 
 def terms(state, top=40, contains=None):
