@@ -180,6 +180,7 @@ is are was were be been being am do does did doing done have has had having
 can could may might must shall should will would ought need
 it they them he she we you i there here also further still thus hence
 therefore however moreover per respectively
+more most less least fewer much many very too quite rather enough
 present herein hereof hereinafter thereof therein thereto therewith
 wherein whereby according aforementioned aforesaid
 preferably optionally substantially approximately essentially particularly
@@ -211,17 +212,19 @@ extend extends extending extended
 fill fills filling filled
 """.split())
 
-# -ing words that really are nouns in this register. A chunk may end in one.
-NOUN_ING = frozenset("""
-coating housing bearing casing tubing wiring cladding packing mounting
-opening spacing loading heating cooling processing sensing switching
-shielding damping doping etching bonding sintering sealing mixing milling
-grinding welding printing folding winding casting moulding molding
-engineering monitoring reforming cracking scrubbing venting purging
-insulating conditioning filtering screening
+# Determiners and copulas. Both are closed classes of English, the same in
+# every technical field, which is the whole reason the head test below can lean
+# on them: they are not a guess about what this corpus is about.
+DETERMINER = frozenset("""
+the a an said this that these those its their his her our your my
+each every any some such no one both all another other
 """.split())
 
-# A term made only of these names a category, not a technology.
+BE = frozenset("is are was were be been being am".split())
+
+# Words from the patent register itself - the vocabulary of claim drafting,
+# identical whether the patent is about catalysts or antibodies. A phrase made
+# only of these names a category, not a technology.
 GENERIC = frozenset("""
 apparatus method methods system systems device devices assembly assemblies
 arrangement arrangements means unit units mechanism mechanisms structure
@@ -230,29 +233,8 @@ technique techniques procedure procedures application applications step steps
 portion portions member members element elements part parts side sides end
 ends surface surfaces embodiment embodiments invention aspect aspects
 example examples figure figures type types kind kinds
-invention disclosure claim claims description summary field background
+disclosure claim claims description summary field background
 drawing drawings
-""".split())
-
-# Participles that are pure drafting language. Unlike "coated" or "activated"
-# they never modify a technology, so they are barred even in front of a head:
-# without this, "stream comprising molecular hydrogen" becomes a term.
-# Adjectives, quantifiers and degree words. They modify a technology and are
-# never one, so they are barred from the head slot only - "high pressure" and
-# "inner compartment" survive, bare "high" and "least" do not.
-GENERAL_ADJ = frozenset("""
-least most more less fewer greater lesser high low higher lower large small
-larger smaller great good better best bad worse worst new old long short
-full empty main total whole single multiple several many much few
-different similar same common possible available suitable effective efficient
-improved enhanced reduced increased desired required necessary sufficient
-appropriate specific general standard normal regular special novel useful
-simple complex direct indirect internal external upper lower inner outer
-front rear left right top bottom central near far deep shallow thick thin
-wide narrow heavy light hard soft hot cold warm cool dry wet clean pure
-free open closed fixed movable flexible rigid smooth rough dense
-substituted unsubstituted optional preferred certain various additional
-exemplary illustrative respective corresponding related associated
 """.split())
 
 BOILER_PARTICIPLE = frozenset("""
@@ -266,31 +248,87 @@ _TOKEN = re.compile(r"[A-Za-z][A-Za-z0-9]*(?:[-'’][A-Za-z0-9]+)*")
 _SENT = re.compile(r"[.!?]+")
 
 
-def _is_head_noun(word, loose=False):
+def _is_head_noun(word, loose=False, heads=None):
     """Can this word be the head of a technical term?
 
-    `loose` is the harvest setting: it keeps any -ing or -ed word that is not
-    outright drafting language, on the grounds that a reader downstream will
-    throw away "operating" far more cheaply than the corpus can hand back a
-    "reforming" it never proposed. The strict setting is the original's
-    `<J.*>*<N.*>+` behaviour, used when no curated vocabulary exists.
+    Closed-class words and patent-register verbs are refused outright - those
+    lists are about English and about patent drafting, not about any subject.
+    Everything else is decided by `heads`, which the corpus itself supplies:
+    see `_learn_heads`. With no evidence available the test falls back to
+    suffixes, which is the old behaviour and is worse.
     """
     if len(word) < 3 or word in FUNCTION:
         return False
     if word.endswith("ly") or word in VERB or word in BOILER_PARTICIPLE:
         return False
-    if word in GENERAL_ADJ:
-        return False
+    if heads is not None:
+        return word in heads
     if loose:
-        # A hyphenated participle is always attributive - "hydrogen-producing
-        # region", never "the hydrogen-producing" - so it can modify a head but
-        # cannot be one.
         return not (("-" in word) and word.endswith(("ing", "ed")))
-    if word.endswith("ing"):
-        return word in NOUN_ING
-    if word.endswith("ed"):
+    if word.endswith(("ing", "ed")):
         return False
     return True
+
+
+def _learn_heads(texts):
+    """Which words this corpus actually uses as the head of a noun phrase.
+
+    Whether "-ing" names a thing or an action is not a fact about the word, it
+    is a fact about usage, and hard-coding it means guessing the subject in
+    advance: a list holding "reforming" and "sintering" knows about fuel cells
+    and knows nothing about "annealing", "patterning" or "phosphorylation".
+
+    So the corpus is asked instead. Content words are cut into spans at every
+    function word and every patent-register verb - the verbs matter, or "the
+    hydrogen produced using the reformer" makes a head out of "using". A word
+    that ends such a span is in head position; a word that never does is a
+    modifier, however often it appears. "hydrogen-producing" is always followed
+    by the thing it describes, and so is "high", so neither can head a term and
+    neither needs to be on a list.
+
+    An attested plural is independent evidence and outranks the ratio, because
+    "coatings" is a noun however the corpus happens to phrase things.
+    """
+    compound, determined = Counter(), Counter()
+    solo, predicative, vocab = Counter(), Counter(), set()
+    for text in texts:
+        for sentence in _SENT.split(text.lower()):
+            toks = _TOKEN.findall(sentence)
+            vocab.update(toks)
+            span, before = [], None
+            for i, tok in enumerate(toks + [""]):
+                if tok and tok not in FUNCTION and tok not in VERB                         and tok not in BOILER_PARTICIPLE:
+                    if not span:
+                        before = toks[i - 1] if i else None
+                    span.append(tok)
+                    continue
+                if span:
+                    head = span[-1]
+                    if before in DETERMINER and len(span) == 1:
+                        solo[head] += 1            # "the REFORMER" - settles it
+                    elif before in DETERMINER:
+                        determined[head] += 1      # "the fuel cell SYSTEM"
+                    elif len(span) > 1:
+                        compound[head] += 1        # "steam REFORMING" - usually a noun
+                    elif before in BE:
+                        predicative[head] += 1     # "is HIGH" - an adjective
+                span, before = [], None
+
+    plural = {w for w in vocab if w + "s" in vocab or w + "es" in vocab}
+    heads = set()
+    for w in set(compound) | set(determined) | set(solo) | plural:
+        if w in plural or solo[w]:
+            # A plural, or a determiner with nothing between it and the word:
+            # "coatings", "the reformer". Either settles the question.
+            heads.add(w)
+        elif predicative[w]:
+            # Seen after a copula and never proved a noun - an adjective. This
+            # is why "the compounds useful for treating X" does not make
+            # "useful" a head: "the compounds are useful" vetoes it.
+            continue
+        elif determined[w] or compound[w]:
+            heads.add(w)
+    return heads
 
 
 def _is_modifier(word):
@@ -309,7 +347,7 @@ def _is_modifier(word):
     return not word.endswith("ly")
 
 
-def chunks(text, min_words=2, max_words=4):
+def chunks(text, min_words=2, max_words=4, heads=None):
     """Noun-phrase chunks, the stand-in for `<J.*>*<N.*>+`.
 
     Walks each sentence collecting runs of modifier-or-noun tokens, then trims
@@ -319,7 +357,7 @@ def chunks(text, min_words=2, max_words=4):
     "oxide fuel cell stack").
     """
     out = []
-    for run in _runs(text, loose=False):
+    for run in _runs(text, loose=False, heads=heads):
         if len(run) >= min_words:
             take = run[-max_words:] if len(run) > max_words else run
             if not all(w in GENERIC for w in take):
@@ -327,17 +365,18 @@ def chunks(text, min_words=2, max_words=4):
     return out
 
 
-def _runs(text, loose=False):
+def _runs(text, loose=False, heads=None):
     """Maximal noun-phrase runs, each already trimmed to end on its head."""
     out = []
     for sentence in _SENT.split(text.lower()):
         for piece in re.split(r"[,:;()\[\]/\"]", sentence):
             run = []
             for token in _TOKEN.findall(piece) + [""]:
-                if token and (_is_modifier(token) or _is_head_noun(token, loose)):
+                if token and (_is_modifier(token)
+                              or _is_head_noun(token, loose, heads)):
                     run.append(token)
                     continue
-                while run and not _is_head_noun(run[-1], loose):
+                while run and not _is_head_noun(run[-1], loose, heads):
                     run.pop()
                 if run:
                     out.append(run)
@@ -349,7 +388,7 @@ _ACRONYM = re.compile(r"\b([A-Z][A-Z0-9]{1,5})\b")
 _COMPOUND = re.compile(r"\b([A-Za-z][A-Za-z0-9]*(?:[-‑][A-Za-z0-9]+)+)\b")
 
 
-def candidates(text, raw=None, max_words=5):
+def candidates(text, raw=None, max_words=5, heads=None):
     """Everything that could be a technical term, for a reader to cut down.
 
     Recall first. Three sources:
@@ -365,9 +404,9 @@ def candidates(text, raw=None, max_words=5):
     * hyphenated and alphanumeric compounds, likewise from the original text.
     """
     out = []
-    for run in _runs(text, loose=True):
+    for run in _runs(text, loose=True, heads=heads):
         for j, head in enumerate(run):
-            if not _is_head_noun(head, loose=True):
+            if not _is_head_noun(head, loose=True, heads=heads):
                 continue
             for i in range(max(0, j - max_words + 1), j + 1):
                 span = run[i:j + 1]
@@ -384,7 +423,7 @@ def candidates(text, raw=None, max_words=5):
             w = m.lower()
             # Same head test as the chunker, or "hydrogen-producing" arrives
             # here by the back door after being refused at the front.
-            if len(w) >= 4 and _is_head_noun(w, loose=True):
+            if len(w) >= 4 and _is_head_noun(w, loose=True, heads=heads):
                 out.append(w)
     return out
 
@@ -587,10 +626,11 @@ def harvest(path, min_patents=2, top=250, floor=4, max_words=5,
     state = _read(path, abstract, date, title)
     texts, raws = state["texts"], state["raws"]
 
+    heads = _learn_heads(texts)
     df, tf = Counter(), Counter()
     per_doc = []
     for t, r in zip(texts, raws):
-        found = [_normalise(c) for c in candidates(t, r, max_words)]
+        found = [_normalise(c) for c in candidates(t, r, max_words, heads)]
         seen = set(found)
         per_doc.append(seen)
         df.update(seen)
@@ -758,7 +798,8 @@ def load(path, top=40, min_patents=2, min_words=2, max_words=4,
     else:
         df, tf, per_doc = Counter(), Counter(), []
         for text in texts:
-            found = [_normalise(c) for c in chunks(text, min_words, max_words)]
+            found = [_normalise(c) for c in chunks(text, min_words, max_words,
+                                                    _learn_heads(texts))]
             seen = set(found)
             per_doc.append(seen)
             df.update(seen)
