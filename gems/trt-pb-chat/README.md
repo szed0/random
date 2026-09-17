@@ -41,13 +41,38 @@ So the split is now:
 `harvest()` proposes every sub-phrase of a noun-phrase run that ends on a noun
 head - so `steam reforming feed` yields `steam reforming` and `steam` as well
 as itself - plus acronyms and hyphenated compounds lifted from the original
-casing. Candidates are ranked by **C-value**, the standard term-recognition
-score: frequency, damped by phrase length and by how much of that frequency is
-already explained by longer phrases containing it. A fragment that only ever
-appears inside something bigger sinks; a term that also stands alone does not.
+casing, which is how `SOFC` gets in at all.
 
-C-value alone buries real terms that happen to be nested, so the printed list is
-the top 250 by C-value **plus** everything appearing in four or more patents.
+Three filters then do the work rules can actually do well:
+
+**Heads must be nouns.** A verb, a participle, an adverb or an adjective can
+modify a technology but cannot be one. `high pressure` and `inner compartment`
+survive; bare `include`, `using`, `relate`, `least`, `more` and `useful` never
+reach the list.
+
+**Fragments die by branching entropy.** A real term is free at both ends -
+`fuel cell system` is preceded by "the", "said", "a", "hydrogen" and followed
+by "comprising", "includes", a full stop. A fragment is not: `cell system` is
+preceded by `fuel` and by nothing else, so the entropy of its left neighbours
+is exactly zero. Taking the smaller of the two ends catches fragments cut from
+either side, and it reads the answer off the corpus instead of off a list of
+words someone thought of in advance. On the test corpus this removes 100
+candidates, among them `cell system`, `carbonate fuel cell` and
+`molten carbonate fuel` - while keeping `molten carbonate fuel cell`.
+
+**Ranking is termhood, not frequency.** C-value for nestedness, multiplied by
+boundary freedom and by how often the term earns a place in a patent *title* -
+titles are written to name the technology and nothing else.
+
+The difference, same corpus, top of the list:
+
+| before | after |
+| --- | --- |
+| hydrogen, fuel, compound, cell, fuel cell, fuel cell system, **include**, composition, **least**, stream, disease, metal, fuel cell stack, anode, treatment, reaction, temperature, **using**, **cell system**, formula | hydrogen, fuel, compound, fuel cell, cell, fuel cell system, metal, stream, disease, composition, temperature, hydrogen gas, fuel cell stack, treatment, reaction, anode, catalyst, inhibitor, hydrogen production apparatus, kinase |
+
+Further down, the new list surfaces `sofc`, `membrane`, `pyrolysis`,
+`electrolyzer`, `heterocyclic compound`, `steam reforming` and `hydrocarbon`,
+none of which the old one proposed at all.
 
 Gemini then keeps what a patent engineer would call a technology and drops
 verbs, drafting language, bare category words and fragments. On the test corpus

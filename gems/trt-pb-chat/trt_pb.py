@@ -208,6 +208,7 @@ move moves moving moved rotate rotates rotating rotated
 apply applies applying applied treat treats treating treated
 prevent prevents preventing prevented cause causes causing caused
 extend extends extending extended
+fill fills filling filled
 """.split())
 
 # -ing words that really are nouns in this register. A chunk may end in one.
@@ -236,6 +237,24 @@ drawing drawings
 # Participles that are pure drafting language. Unlike "coated" or "activated"
 # they never modify a technology, so they are barred even in front of a head:
 # without this, "stream comprising molecular hydrogen" becomes a term.
+# Adjectives, quantifiers and degree words. They modify a technology and are
+# never one, so they are barred from the head slot only - "high pressure" and
+# "inner compartment" survive, bare "high" and "least" do not.
+GENERAL_ADJ = frozenset("""
+least most more less fewer greater lesser high low higher lower large small
+larger smaller great good better best bad worse worst new old long short
+full empty main total whole single multiple several many much few
+different similar same common possible available suitable effective efficient
+improved enhanced reduced increased desired required necessary sufficient
+appropriate specific general standard normal regular special novel useful
+simple complex direct indirect internal external upper lower inner outer
+front rear left right top bottom central near far deep shallow thick thin
+wide narrow heavy light hard soft hot cold warm cool dry wet clean pure
+free open closed fixed movable flexible rigid smooth rough dense
+substituted unsubstituted optional preferred certain various additional
+exemplary illustrative respective corresponding related associated
+""".split())
+
 BOILER_PARTICIPLE = frozenset("""
 comprising comprised including included consisting consisted containing
 contained having disclosing disclosed describing described defining defined
@@ -258,12 +277,15 @@ def _is_head_noun(word, loose=False):
     """
     if len(word) < 3 or word in FUNCTION:
         return False
-    if word.endswith("ly"):
+    if word.endswith("ly") or word in VERB or word in BOILER_PARTICIPLE:
+        return False
+    if word in GENERAL_ADJ:
         return False
     if loose:
-        return word not in BOILER_PARTICIPLE
-    if word in VERB:
-        return False
+        # A hyphenated participle is always attributive - "hydrogen-producing
+        # region", never "the hydrogen-producing" - so it can modify a head but
+        # cannot be one.
+        return not (("-" in word) and word.endswith(("ing", "ed")))
     if word.endswith("ing"):
         return word in NOUN_ING
     if word.endswith("ed"):
@@ -360,8 +382,60 @@ def candidates(text, raw=None, max_words=5):
                 out.append(m.lower())
         for m in _COMPOUND.findall(raw):
             w = m.lower()
-            if w not in FUNCTION and len(w) >= 4:
+            # Same head test as the chunker, or "hydrogen-producing" arrives
+            # here by the back door after being refused at the front.
+            if len(w) >= 4 and _is_head_noun(w, loose=True):
                 out.append(w)
+    return out
+
+
+_BOS, _EOS = "\x02", "\x03"
+
+
+def _contexts(texts, pool, max_words=5):
+    """What sits immediately left and right of each candidate, corpus-wide.
+
+    This is the evidence for whether a candidate is a term or a piece of one.
+    """
+    left = defaultdict(Counter)
+    right = defaultdict(Counter)
+    for text in texts:
+        for sentence in _SENT.split(text.lower()):
+            toks = _TOKEN.findall(sentence)
+            n = len(toks)
+            for i in range(n):
+                for L in range(1, min(max_words, n - i) + 1):
+                    gram = _normalise(" ".join(toks[i:i + L]))
+                    if gram in pool:
+                        left[gram][toks[i - 1] if i else _BOS] += 1
+                        right[gram][toks[i + L] if i + L < n else _EOS] += 1
+    return left, right
+
+
+def _entropy(counter):
+    total = sum(counter.values())
+    if total <= 0:
+        return 0.0
+    return -sum((c / total) * math.log2(c / total)
+                for c in counter.values() if c)
+
+
+def _boundaries(texts, pool, max_words=5):
+    """Branching entropy: does this phrase stand on its own two ends?
+
+    A real term is preceded and followed by many different words - "the fuel
+    cell system", "said fuel cell system", "a fuel cell system comprising". A
+    fragment is not: "cell system" is preceded by "fuel" and nothing else, so
+    the entropy of its left neighbours is exactly zero. Taking the smaller of
+    the two ends catches fragments cut from either side, and it does it from
+    the corpus itself rather than from a list of words I happened to think of.
+    """
+    left, right = _contexts(texts, pool, max_words)
+    out = {}
+    for t in pool:
+        hl, hr = _entropy(left.get(t, Counter())), _entropy(right.get(t, Counter()))
+        out[t] = {"left": hl, "right": hr, "boundary": min(hl, hr),
+                  "lvar": len(left.get(t, ())), "rvar": len(right.get(t, ()))}
     return out
 
 
@@ -523,21 +597,55 @@ def harvest(path, min_patents=2, top=250, floor=4, max_words=5,
         tf.update(found)
 
     pool = {t for t, c in df.items() if c >= min_patents}
+    raw_pool = len(pool)
+
+    # Fragment filter. A multi-word candidate has to be free at both ends: at
+    # least two different words may precede it and two follow it, and neither
+    # side may be perfectly predictable. "cell system" is only ever preceded by
+    # "fuel", so it goes; "fuel cell system" stays.
+    bounds = _boundaries(texts, pool, max_words)
+    pool = {t for t in pool
+            if len(t.split()) == 1
+            or (bounds[t]["lvar"] >= 2 and bounds[t]["rvar"] >= 2
+                and bounds[t]["boundary"] > 0)}
+    fragments = raw_pool - len(pool)
+
     tf = Counter({t: tf[t] for t in pool})
     df = Counter({t: df[t] for t in pool})
     cv = _c_value(df, tf)
 
+    # How often the term earns a place in the title. Titles are written to name
+    # the technology and nothing else, so this separates the subject of a
+    # patent from the vocabulary it happens to use.
+    tpat = {t: _pattern([t]) for t in pool}
+    intitle = Counter()
+    for title in state["titles"]:
+        low = title.lower()
+        for t in pool:
+            if tpat[t].search(low):
+                intitle[t] += 1
+
     n = max(len(texts), 1)
     score = {k: tf[k] * math.log(n / (1 + df[k])) for k in df}
-    ranked = sorted(pool, key=lambda t: (-cv[t], -df[t], t))
+    top_b = max((bounds[t]["boundary"] for t in pool), default=1.0) or 1.0
+    termhood = {}
+    for t in pool:
+        b = bounds[t]["boundary"] / top_b
+        title_rate = intitle[t] / df[t] if df[t] else 0.0
+        termhood[t] = cv[t] * (1 + b) * (1 + title_rate)
+
+    state["bounds"] = bounds
+    state["termhood"] = termhood
+    state["intitle"] = intitle
+    ranked = sorted(pool, key=lambda t: (-termhood[t], -df[t], t))
     state.update({"per_doc": per_doc, "df": df, "tf": tf, "cvalue": cv,
                   "score": score, "pool": ranked, "vocab": ranked,
                   "triples": None})
 
     _print_corpus(state)
-    print("HARVEST  %d candidate terms in at least %d patents "
-          "(of %d proposed). Ranked by C-value."
-          % (len(ranked), min_patents, len(per_doc) and len(set().union(*per_doc))))
+    print("HARVEST  %d candidates in %d+ patents; %d fragments removed by "
+          "branching entropy." % (len(ranked), min_patents, fragments))
+    print("         Ranked by termhood: C-value, boundary freedom, title share.")
 
     # C-value discounts a phrase that lives inside longer ones, which is right
     # for fragments and wrong for a real term that happens to be nested -
@@ -551,8 +659,8 @@ def harvest(path, min_patents=2, top=250, floor=4, max_words=5,
           "%d+ patents)" % (len(shown), len(ranked), top, floor))
     width = max((len(t) for t in shown), default=10)
     for i, t in enumerate(shown, start=1):
-        print("%4d  %-*s  %3d pat  %3d men  c=%6.1f"
-              % (i, width, t, df[t], tf[t], cv[t]))
+        print("%4d  %-*s  %3d pat  %3d men  title %2d  score %7.1f"
+              % (i, width, t, df[t], tf[t], intitle[t], termhood[t]))
     print("\nThis list is raw. Read it, drop everything that is not a "
           "technology - verbs,\nfragments, category words, legal boilerplate - "
           "and call:")
@@ -699,10 +807,12 @@ def _read(path, abstract=None, date=None, title=None):
             else str(r[c_ttl] if c_ttl else r[c_abs])
             for _, r in keep.iterrows()]
     texts = [clean(r) for r in raws]
+    titles = [clean(str(r[c_ttl])) for _, r in keep.iterrows()] if c_ttl else [""] * len(keep)
     years = [year_of(v) for v in keep[c_dat]] if c_dat else [None] * len(keep)
     pubs = ([str(v) for v in keep[c_pub]] if c_pub
             else ["row%d" % i for i in range(len(keep))])
-    return {"frame": keep, "texts": texts, "raws": raws, "years": years,
+    return {"frame": keep, "texts": texts, "raws": raws, "titles": titles,
+            "years": years,
             "pubs": pubs, "rows": len(frame),
             "columns": {"title": c_ttl, "abstract": c_abs,
                         "date": c_dat, "pubno": c_pub}}
