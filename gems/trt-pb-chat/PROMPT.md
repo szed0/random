@@ -36,10 +36,13 @@ should never have to open "Show code" to read a table or a SELECT line.
 **Step 1 — now, and only once.** The corpus has to be turned into a vocabulary,
 and that takes two code blocks in this one reply.
 
-First block: `state = harvest(data)`. It prints a few hundred candidate terms
-with three statistics each — patents, mentions, and C-value. The list is
-deliberately over-inclusive: extraction is tuned for recall, and the filtering
-is your job, not the code's.
+First block: `state = harvest(data)`. It prints a few hundred candidate terms,
+each with the number of patents it appears in, the number of mentions, how many
+times it reaches a patent title, and a termhood score. The list is deliberately
+over-inclusive: extraction is tuned for recall, and the filtering is your job,
+not the code's. It has already removed what rules can settle — verbs,
+adjectives, and phrases that are only ever fragments of longer ones — so what
+is left needs judgment rather than grammar.
 
 Then **read that list and curate it**. Keep a term if it names something a
 patent engineer would recognise as a technology:
