@@ -22,6 +22,25 @@ correctly refuse to answer. `SETUP.md` has the measurement.
 | | B — corrected replica, recency deliberately left off | `intent-preserving/b-corrected/` | `trt_corrected.py` |
 | | C — intent-optimal: evidence layer, Bayesian enrichment with seven estimator ablations, eight trend states, backtest | `intent-preserving/c-intent-optimal/` | `trt_intent.py` |
 
+## Keyword extraction
+
+The six ablations above all inherit one extractor, and on real corpora it puts
+drafting language - `form`, `manufacturing`, `amount`, `ratio`, `making` - at
+the top of the menu. `keyword-extraction/` replaces it and measures the
+replacement against the local tool: the shipped extractor reproduces 12 of
+trt-pb's top 40, c-value x cohesion reproduces 24, and filtering the candidate
+list with the model is worth a further seven to nine rows.
+
+Four code-side extractors (`df`, `runs`, `tfidf`, `lsa`) x two model-side
+filters (per-abstract, or one pass over the menu). The counting and the six
+figures in `keyword-trends/` are untouched.
+
+`keyword-extraction/ENVIRONMENT.md` corrects three environment facts the rest
+of this directory is built on. Measured 2026-09-18: code execution exists
+**only inside a Gem**, a Gem knowledge file **is** a real file in the sandbox,
+and scikit-learn, scipy, nltk, spaCy and networkx are all present. spaCy has
+no models, so the part-of-speech pattern still cannot be run.
+
 ## The visual layer
 
 trt-pb was a picture tool. It drew a technology relationship graph and a
