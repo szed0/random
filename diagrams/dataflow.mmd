@@ -1,0 +1,68 @@
+flowchart TB
+    exportfile[/"Export file"/]
+
+    ingest("Ingest: map columns,<br/>parse dates, dedupe families")
+    patents["patents table<br/>number, year, assignee, CPC,<br/>title, abstract, claims"]
+    parse("spaCy parse")
+    cache["parse cache file"]
+    docs[/"parsed docs<br/>tokens, tags, noun chunks"/]
+    generate("Candidate generation<br/>2-4 words, head noun,<br/>fragments dropped, plurals folded")
+    candidates[/"candidates<br/>term, variants, patents,<br/>C-value, tf-idf"/]
+    curate("Curation classifier")
+    topics("Topic / subtopic<br/>from the patents' CPC codes")
+    terms["terms table<br/>technical + rejected"]
+    termsfile["technical_terms.csv<br/>technical rows, then rejected"]
+    occurrences["occurrences table<br/>term, patent, field, position"]
+
+    keywords[/"keyword table by topic"/]
+    evolution("Evolution<br/>per year: count and share")
+    cooc("Co-occurrence<br/>shared patents, share, lift")
+    pair("Pair evolution<br/>both by year, observed vs expected")
+    chart1[/"primary evolution chart"/]
+    secfile["secondary_term.csv / .json"]
+    chart2[/"pair evolution chart"/]
+
+    pack("Evidence-pack builder")
+    packsdir["packs/ folder"]
+    gemini{{"Gemini web Gem"}}
+    answer[/"answer with cited<br/>patent numbers"/]
+    check("Insight inbox<br/>parse findings, check citations")
+    insightsdir["insights/ folder"]
+    report[/"Report"/]
+
+    exportfile --> ingest --> patents
+    patents --> parse --> docs
+    parse <--> cache
+    docs --> generate --> candidates --> curate
+    curate --> topics
+    patents -- "CPC codes" --> topics
+    topics --> terms --> termsfile
+    generate --> occurrences
+    terms --> keywords
+
+    keywords -- "analyst picks primary" --> evolution --> chart1
+    keywords --> cooc --> secfile
+    occurrences --> evolution
+    occurrences --> cooc
+    secfile -- "analyst picks secondary" --> pair --> chart2
+
+    chart1 --> pack
+    secfile --> pack
+    chart2 --> pack
+    patents -- "patent text" --> pack
+    pack --> packsdir
+    pack -- "clipboard" --> gemini --> answer --> check
+    patents -- "known patent numbers" --> check
+    check --> insightsdir
+
+    chart1 --> report
+    chart2 --> report
+    secfile --> report
+    insightsdir --> report
+
+    classDef mem fill:#e8f1f8,stroke:#0b6fa4,color:#0b3a57
+    classDef file fill:#eef6ea,stroke:#3f8f29,color:#1e4a13
+    classDef gem fill:#fdf1e6,stroke:#d1600a,color:#5a2a05
+    class patents,terms,occurrences mem
+    class cache,termsfile,secfile,packsdir,insightsdir file
+    class gemini gem

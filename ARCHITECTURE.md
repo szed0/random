@@ -10,6 +10,11 @@ There is no database. While the app runs, the data lives in memory as pandas
 tables; everything worth keeping is a plain file in the project folder.
 Reopening a project re-reads the export and `technical_terms.csv`.
 
+The Mermaid source of each diagram is also in its own file:
+[`diagrams/architecture.mmd`](diagrams/architecture.mmd),
+[`diagrams/dataflow.mmd`](diagrams/dataflow.mmd),
+[`diagrams/session.mmd`](diagrams/session.mmd).
+
 ## Architecture
 
 ```mermaid

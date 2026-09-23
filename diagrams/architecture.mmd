@@ -1,0 +1,56 @@
+flowchart TB
+    exportfile["ORBIT export<br/>CSV / Excel"]
+    analyst(("Analyst"))
+
+    subgraph LOCAL["Analyst's machine: local app"]
+        ingest["1 Ingest<br/>pandas: columns, dates, dedupe"]
+        extract["2 Extract<br/>spaCy noun phrases, C-value,<br/>fragment filter, plural folding"]
+        clean["3 Clean<br/>rules + trained classifier:<br/>technical term or noise"]
+        classify["4 Classify<br/>topic / subtopic from CPC"]
+        memory["5 In-memory tables<br/>pandas: patents, terms,<br/>occurrences"]
+        analytics["6 Analytics<br/>evolution, co-occurrence,<br/>lift, trace"]
+        gui["GUI: Streamlit + Plotly<br/>keywords, primary, secondary,<br/>evolution charts"]
+        packer["7 Evidence-pack builder<br/>Send to Gemini"]
+        inbox["8 Insight inbox<br/>checks every cited patent number"]
+        report["9 Report"]
+
+        ingest --> extract --> clean --> classify --> memory
+        memory <--> analytics
+        analytics --> gui
+        gui --> packer
+        inbox --> report
+        analytics --> report
+    end
+
+    subgraph FOLDER["Project folder: plain files"]
+        termsfile["technical_terms.csv<br/>technical rows, then rejected"]
+        secfile["secondary_term.csv / .json"]
+        packsdir["packs/<br/>every evidence pack sent"]
+        insightsdir["insights/<br/>every answer pasted back"]
+        reportfile["report"]
+        cachefile["parse cache<br/>keyed by export file hash"]
+    end
+
+    subgraph GEMINI["Gemini web"]
+        gemA["Gem A<br/>read the patents"]
+        gemB["Gem B<br/>outside world:<br/>Search, Deep Research"]
+        gemC["Gem C<br/>white space,<br/>next searches"]
+    end
+
+    exportfile --> ingest
+    analyst --- gui
+    extract <--> cachefile
+    classify --> termsfile
+    analytics --> secfile
+    packer --> packsdir
+    inbox --> insightsdir
+    report --> reportfile
+    packer -- "copy pack, open Gem" --> GEMINI
+    GEMINI -- "analyst pastes answer back" --> inbox
+
+    classDef ext fill:#f4f4f4,stroke:#888,color:#222
+    classDef file fill:#eef6ea,stroke:#3f8f29,color:#1e4a13
+    classDef gem fill:#fdf1e6,stroke:#d1600a,color:#5a2a05
+    class exportfile,analyst ext
+    class termsfile,secfile,packsdir,insightsdir,reportfile,cachefile file
+    class gemA,gemB,gemC gem
