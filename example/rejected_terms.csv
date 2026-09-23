@@ -1,0 +1,532 @@
+term,status,n_patents,patents
+electrolyte secondary battery,rejected,7,US20160149214A1-20160526 US20160211515A1-20160721 US20160172674A1-20160616 US20160211554A1-20160721 US20160172673A1-20160616 US20160204438A1-20160714 US20160240843A1-20160818
+general formula,rejected,6,US20160226067A1-20160804 US20160172674A1-20160616 US20160141625A1-20160519 US20160172673A1-20160616 US20160141582A1-20160519 US20160164093A1-20160609
+solid oxide,rejected,6,US20060121327A1-20060608 US20060035128A1-20060216 US20160141692A1-20160519 US20160149249A1-20160526 US20160111749A1-20160421 US20160118674A1-20160428
+material particle,rejected,5,US20060002844A1-20060105 US20160190560A1-20160630 US20160204438A1-20160714 US20160204427A1-20160714 US20160240843A1-20160818
+high capacity,rejected,4,US20160149214A1-20160526 US20160226070A1-20160804 US20160190579A1-20160630 US20160164091A1-20160609
+storage device,rejected,4,US20160190657A1-20160630 US20160226070A1-20160804 US20160141719A1-20160519 US20160164053A1-20160609
+electric power,rejected,4,US20160197367A1-20160707 US20160172657A1-20160616 US20160164053A1-20160609 US20160226044A1-20160804
+opposite side,rejected,3,US20160190657A1-20160630 US20160164053A1-20160609 US20160172635A1-20160616
+gas diffusion,rejected,3,US20160164120A1-20160609 US20160156053A1-20160602 US20160211528A1-20160721
+lithium composite,rejected,3,US20160172674A1-20160616 US20160164087A1-20160609 US20160190579A1-20160630
+cathode side,rejected,3,US20060134469A1-20060622 US20170207470A1-20170720 US20160156047A1-20160602
+low temperature,rejected,3,US20160233546A1-20160811 US20160211535A1-20160721 US20160149249A1-20160526
+anode side,rejected,3,US20060134469A1-20060622 US20060078768A1-20060413 US20170207470A1-20170720
+electrochemical system,rejected,3,US20060003203A1-20060105 US20160211539A1-20160721 US20160301084A1-20161013
+fuel cell power,rejected,3,US20060093877A1-20060504 US20060099464A1-20060511 US20160111749A1-20160421
+manufacturing method,rejected,3,US20160149179A1-20160526 US20160164093A1-20160609 US20160204434A1-20160714
+material layer,rejected,3,US20160344021A1-20161124 US20160141604A1-20160519 US20160204434A1-20160714
+total amount,rejected,2,US20160164144A1-20160609 US20160164093A1-20160609
+metal plate,rejected,2,US20160240827A1-20160818 US20160149179A1-20160526
+power generation,rejected,2,US20060088739A1-20060427 US20160111749A1-20160421
+power plant,rejected,2,US20060093877A1-20060504 US20060099464A1-20060511
+inner portion,rejected,2,US20060029850A1-20060209 US20160149214A1-20160526
+base plate,rejected,2,US20160172654A1-20160616 US20160164053A1-20160609
+supply system,rejected,2,US20060088739A1-20060427 US20160126546A1-20160505
+electrical current,rejected,2,US20060035128A1-20060216 US20060078764A1-20060413
+core part,rejected,2,US20160190560A1-20160630 US20160211515A1-20160721
+aqueous solution,rejected,2,US20060046123A1-20060302 US20160211539A1-20160721
+electrochemical reaction,rejected,2,US20160164120A1-20160609 US20160218380A1-20160728
+flow path,rejected,2,US20060035133A1-20060216 US20160141692A1-20160519
+low-temperature environment,rejected,2,US20160172674A1-20160616 US20160172673A1-20160616
+metal layer,rejected,2,US20060046113A1-20060302 US20160204397A1-20160714
+longitudinal direction,rejected,2,US20160211560A1-20160721 US20160204438A1-20160714
+production process,rejected,2,US20160211562A1-20160721 US20160172635A1-20160616
+manganese composite,rejected,2,US20160172673A1-20160616 US20160164093A1-20160609
+main component,rejected,2,US20060078764A1-20060413 US20160141625A1-20160519
+fluid communication,rejected,2,US20060110634A1-20060525 US20160181639A1-20160623
+electrical connection,rejected,2,US20060141328A1-20060629 US20060071209A1-20060406
+electrical potential,rejected,2,US20060141306A1-20060629 US20160172685A1-20160616
+high density,rejected,2,US20170194636A1-20170706 US20160141582A1-20160519
+fuel cell operation,rejected,2,US20160211535A1-20160721 US20170200955A1-20170713
+flow rate,rejected,2,US20060078768A1-20060413 US20060051632A1-20060309
+electrical contact,rejected,2,US20060134469A1-20060622 US20160204427A1-20160714
+electrical device,rejected,2,US20060088739A1-20060427 US20160372750A1-20161222
+adjacent fuel cell,rejected,2,US20060035128A1-20060216 US20160204461A1-20160714
+management system,rejected,2,US20160172654A1-20160616 US20170214099A1-20170727
+average particle,rejected,2,US20160126546A1-20160505 US20160204434A1-20160714
+unit control,rejected,2,US20160197367A1-20160707 US20160211494A1-20160721
+flow control,rejected,2,US20060078768A1-20060413 US20060099464A1-20060511
+lithium mixture,rejected,2,US20160172674A1-20160616 US20160172673A1-20160616
+electrochemical device,rejected,2,US20060105244A1-20060518 US20160204444A1-20160714
+electrolyte rechargeable battery,rejected,2,US20160164091A1-20160609 US20160164093A1-20160609
+outer peripheral portion,rejected,1,US20060029850A1-20060209
+conductive medium,rejected,1,US20160218380A1-20160728
+solid buffer material,rejected,1,US20160211539A1-20160721
+accommodation space,rejected,1,US20160322617A1-20161103
+outer metal plate,rejected,1,US20160240827A1-20160818
+cover plate,rejected,1,US20160172654A1-20160616
+heat-resistant insulating base body,rejected,1,US20160204397A1-20160714
+inner metal plate,rejected,1,US20160240827A1-20160818
+bottom part,rejected,1,US20160141735A1-20160519
+metallic component,rejected,1,US20090291340A1-20091126
+upper multilayer polymer,rejected,1,US20070231687A1-20071004
+auxiliary device,rejected,1,US20160211561A1-20160721
+ceramic component,rejected,1,US20090291340A1-20091126
+folded portion,rejected,1,US20160218387A1-20160728
+front cover plate,rejected,1,US20160172654A1-20160616
+conductive path,rejected,1,US20160204397A1-20160714
+porous substrate,rejected,1,US20160141582A1-20160519
+active additive,rejected,1,US20160218380A1-20160728
+inactive region,rejected,1,US20060127706A1-20060615
+take-off connection,rejected,1,US20060035128A1-20060216
+side cover plate,rejected,1,US20160172654A1-20160616
+inlet gas,rejected,1,US20160141692A1-20160519
+transversal direction,rejected,1,US20160211561A1-20160721
+substrate layer,rejected,1,US20060141328A1-20060629
+measured storage battery,rejected,1,US20160240835A1-20160818
+stacking direction,rejected,1,US20160240827A1-20160818
+gas side,rejected,1,US20160164120A1-20160609
+peripheral wall,rejected,1,US20160141568A1-20160519
+open area,rejected,1,US20170214013A1-20170727
+battery receiving surface,rejected,1,US20160141568A1-20160519
+packing structure,rejected,1,US20070231687A1-20071004
+dc current,rejected,1,US20060093877A1-20060504
+extension portion,rejected,1,US20070231687A1-20071004
+resistance member,rejected,1,US20160204397A1-20160714
+constant current,rejected,1,US20170092937A1-20170330
+gas-permeable barrier sheet,rejected,1,US20160204491A1-20160714
+functional layer,rejected,1,US20160141582A1-20160519
+outer solid nickel bar,rejected,1,US20060035128A1-20060216
+flow passage,rejected,1,US20160164111A1-20160609
+substrate section,rejected,1,US20160149179A1-20160526
+treatment layer,rejected,1,US20160141604A1-20160519
+alkaline solution,rejected,1,US20060078764A1-20060413
+outlet portion,rejected,1,US20160322617A1-20161103
+enhanced electrochemical property,rejected,1,US20160372750A1-20161222
+inner screen section,rejected,1,US20060035128A1-20060216
+liquid side,rejected,1,US20160164120A1-20160609
+initial stack stage,rejected,1,US20060099464A1-20060511
+columnar projection,rejected,1,US20160226070A1-20160804
+pulsation amplitude,rejected,1,US20160197367A1-20160707
+siphon fashion,rejected,1,US20060046123A1-20060302
+top cover plate,rejected,1,US20160172654A1-20160616
+energy generation process,rejected,1,US20160181639A1-20160623
+contact plate,rejected,1,US20160190657A1-20160630
+gas inlet,rejected,1,US20160322617A1-20161103
+outer circumferential surface,rejected,1,US20160276637A1-20160922
+correction factor,rejected,1,US20060093877A1-20060504
+deformable porous layer,rejected,1,US20160276637A1-20160922
+oxidant pressure level,rejected,1,US20170207470A1-20170720
+molar percent,rejected,1,US20160118674A1-20160428
+side diffusion layer structure,rejected,1,US20060134469A1-20060622
+high discharge capacity,rejected,1,US20160190560A1-20160630
+off position,rejected,1,US20160156047A1-20160602
+fluid flow path,rejected,1,US20160141692A1-20160519
+water pressure level,rejected,1,US20170207470A1-20170720
+organic residue,rejected,1,US20060014066A1-20060119
+stacked reactor,rejected,1,US20060046113A1-20060302
+operation probability,rejected,1,US20160172657A1-20160616
+aqueous emulsion,rejected,1,US20160141625A1-20160519
+circumferential edge,rejected,1,US20160172635A1-20160616
+external impact,rejected,1,US20070231687A1-20071004
+operating agent,rejected,1,US20160204461A1-20160714
+acid ester,rejected,1,US20160164144A1-20160609
+fuel cell stack stage,rejected,1,US20060099464A1-20060511
+formula sizge,rejected,1,US20100190059A1-20100729
+battery retention section,rejected,1,US20160276637A1-20160922
+heat-resistant metal layer,rejected,1,US20160204397A1-20160714
+adjacent fuel cell stack,rejected,1,US20160204461A1-20160714
+heat resistance layer,rejected,1,US20160211554A1-20160721
+iron content,rejected,1,US20160149214A1-20160526
+upper boundary,rejected,1,US20060046125A1-20060302
+electrical isolation,rejected,1,US20060141306A1-20060629
+maintenance time,rejected,1,US20160172673A1-20160616
+adherent contact,rejected,1,US20060105244A1-20060518
+non-positive contact,rejected,1,US20060078789A1-20060413
+insulating property,rejected,1,US20160211494A1-20160721
+main channel,rejected,1,US20160204461A1-20160714
+supporting body,rejected,1,US20160111749A1-20160421
+wetting pressure,rejected,1,US20160164120A1-20160609
+outer shell,rejected,1,US20160226044A1-20160804
+structural film,rejected,1,US20060029850A1-20060209
+additive medium,rejected,1,US20160218380A1-20160728
+potential mean,rejected,1,US20060071209A1-20060406
+high permeability,rejected,1,US20170005341A1-20170105
+temperature rise,rejected,1,US20160172673A1-20160616
+bulk portion,rejected,1,US20170200955A1-20170713
+remaining part,rejected,1,US20070231687A1-20071004
+retention member,rejected,1,US20060040173A1-20060223
+energy generation,rejected,1,US20160181639A1-20160623
+pressure difference,rejected,1,US20160197367A1-20160707
+raised portion,rejected,1,US20160141568A1-20160519
+unit weight,rejected,1,US20160141719A1-20160519
+outer wall,rejected,1,US20160218404A1-20160728
+hybrid device,rejected,1,US20160164128A1-20160609
+supporting unit,rejected,1,US20160111749A1-20160421
+flow barrier,rejected,1,US20160218378A1-20160728
+insulative layer,rejected,1,US20160218404A1-20160728
+opening device,rejected,1,US20060172171A1-20060803
+reaction unit,rejected,1,US20060068260A1-20060330
+voltage level,rejected,1,US20170207470A1-20170720
+high rate,rejected,1,US20160190560A1-20160630
+compliant layer,rejected,1,US20060046125A1-20060302
+conductive mean,rejected,1,US20160218382A1-20160728
+swollen membrane-induced failure mechanism,rejected,1,US20060093875A1-20060504
+open side,rejected,1,US20160301041A1-20161013
+stack stage,rejected,1,US20060099464A1-20060511
+unused fuel,rejected,1,US20060046108A1-20060302
+pressure level,rejected,1,US20170207470A1-20170720
+current value,rejected,1,US20060093877A1-20060504
+cell compartment,rejected,1,US20090169978A1-20090702
+current level,rejected,1,US20170207470A1-20170720
+power level,rejected,1,US20170207470A1-20170720
+conducting plate,rejected,1,US20160190657A1-20160630
+control unit,rejected,1,US20160197367A1-20160707
+quaternary ruthenium-rhenium alloys rumeimeiire,rejected,1,US20160118671A1-20160428
+conductive substrate,rejected,1,US20170062800A1-20170302
+fuel cell component,rejected,1,US20060093735A1-20060504
+high temperature,rejected,1,US20160233546A1-20160811
+contact unit,rejected,1,US20060141349A1-20060629
+relieved edge region relative,rejected,1,US20060046124A1-20060302
+reduced thickness section thinner,rejected,1,US20160149179A1-20160526
+battery type,rejected,1,US20060068274A1-20060330
+terminal surface,rejected,1,US20160240835A1-20160818
+high tech drain rate,rejected,1,US20060068288A1-20060330
+fuel cell device,rejected,1,US20060172171A1-20060803
+external complementary connector part,rejected,1,US20060141349A1-20060629
+constant voltage charging reache,rejected,1,US20170092937A1-20170330
+expensive connecting technique,rejected,1,US20160172635A1-20160616
+gas control unit,rejected,1,US20160197367A1-20160707
+porous layer,rejected,1,US20160276637A1-20160922
+surface portion,rejected,1,US20170200955A1-20170713
+long service life,rejected,1,US20060078764A1-20060413
+side plate,rejected,1,US20160164053A1-20160609
+ruthenium alloys rumeimeii,rejected,1,US20160118671A1-20160428
+aqueous solution container in-situ,rejected,1,US20060046123A1-20060302
+recommended particle size distribution,rejected,1,US20060121327A1-20060608
+flow rate requirements increase,rejected,1,US20060078768A1-20060413
+liquid water discharging function,rejected,1,US20160156053A1-20160602
+below-described chemical formula,rejected,1,US20060014066A1-20060119
+strong external force,rejected,1,US20160233469A1-20160811
+composite material,rejected,1,US20160141582A1-20160519
+combined molar percent,rejected,1,US20160118674A1-20160428
+superior lifespan characteristics,rejected,1,US20160181609A1-20160623
+x4 represents po4,rejected,1,US20160126539A1-20160505
+plural non-aqueous electrolytic solution,rejected,1,US20160164140A1-20160609
+carbonate bond chain,rejected,1,US20160181616A1-20160623
+large domain size,rejected,1,US20060014067A1-20060119
+lithium mixture undergoes calcination,rejected,1,US20160172673A1-20160616
+adjunct component mount,rejected,1,US20060099464A1-20060511
+body accommodating electrical component,rejected,1,US20060068274A1-20060330
+optimum discharge efficiency,rejected,1,US20060068288A1-20060330
+lithium ion absorbing potential,rejected,1,US20160126546A1-20160505
+edge stress relief,rejected,1,US20060046124A1-20060302
+internal electrical resistance level,rejected,1,US20160211535A1-20160721
+simple sintering process,rejected,1,US20170005341A1-20170105
+fine uneven structure,rejected,1,US20160156053A1-20160602
+electrically-conductive mating surface,rejected,1,US20060121327A1-20060608
+good thermal stability,rejected,1,US20170005341A1-20170105
+water condensation collection,rejected,1,US20060099464A1-20060511
+silicon secondary particles act,rejected,1,US20160190570A1-20160630
+reduced internal stress,rejected,1,US20060093875A1-20060504
+excellent initial performance,rejected,1,US20160190602A1-20160630
+cell unit,rejected,1,US20060141349A1-20060629
+angled land surface,rejected,1,US20060046125A1-20060302
+low soc state,rejected,1,US20160164093A1-20160609
+dc current calculation,rejected,1,US20060093877A1-20060504
+low drain rate,rejected,1,US20060068288A1-20060330
+free inner chamber,rejected,1,US20160218378A1-20160728
+reduced thickness section,rejected,1,US20160149179A1-20160526
+optimized pore structure,rejected,1,US20160372750A1-20161222
+excellent cycle characteristics,rejected,1,US20160164091A1-20160609
+power generating function,rejected,1,US20160156053A1-20160602
+room temperature operation,rejected,1,US20160149249A1-20160526
+metal box mountable,rejected,1,US20160211494A1-20160721
+ceramic separator glued,rejected,1,US20060105244A1-20060518
+builds up pressure,rejected,1,US20160226044A1-20160804
+temperature rising time,rejected,1,US20160172674A1-20160616
+external mounting part,rejected,1,US20160164053A1-20160609
+connection bar extend,rejected,1,US20160240827A1-20160818
+battery assembly retained relative,rejected,1,US20170214011A1-20170727
+degree celsius,rejected,1,US20160218404A1-20160728
+diagonal orientation,rejected,1,US20060093875A1-20060504
+find utility,rejected,1,US20160372750A1-20161222
+human skin,rejected,1,US20160233469A1-20160811
+proper selection,rejected,1,US20060046123A1-20060302
+rapid heat-up,rejected,1,US20160211535A1-20160721
+reverse configuration,rejected,1,US20070009802A1-20070111
+round trip,rejected,1,US20160211562A1-20160721
+synchronous electromagnetic,rejected,1,US20060046108A1-20060302
+tortuous pathway,rejected,1,US20090169978A1-20090702
+downsized power source,rejected,1,US20060040173A1-20060223
+introduce cooling air,rejected,1,US20160211560A1-20160721
+takes cooling air,rejected,1,US20160211561A1-20160721
+high oxygen permeability,rejected,1,US20170005341A1-20170105
+water management capability,rejected,1,US20060093735A1-20060504
+membrane films swell,rejected,1,US20060093875A1-20060504
+battery pack array retention,rejected,1,US20170214013A1-20170727
+heated cooling fluid,rejected,1,US20060105209A1-20060518
+low internal resistance,rejected,1,US20160233546A1-20160811
+sealed extension portion,rejected,1,US20070231687A1-20071004
+reduced stack thickness,rejected,1,US20060127706A1-20060615
+nonaqueous electrolyte battery become,rejected,1,US20160126546A1-20160505
+ion-conducting species,rejected,1,US20160149249A1-20160526
+long cycle-life,rejected,1,US20060051674A1-20060309
+optimum microstructure,rejected,1,US20060121327A1-20060608
+oval shape,rejected,1,US20160156047A1-20160602
+substantial loss,rejected,1,US20060093921A1-20060504
+flow fields maintain,rejected,1,US20060035133A1-20060216
+energy storage device component,rejected,1,US20160226070A1-20160804
+system coolant inlet pressure,rejected,1,US20060134483A1-20060622
+anode's electrochemical capacity,rejected,1,US20060068288A1-20060330
+cathode's electrochemical capacity,rejected,1,US20060068288A1-20060330
+electricity receiving source,rejected,1,US20060035128A1-20060216
+low water content,rejected,1,US20160126539A1-20160505
+added strength,rejected,1,US20060029850A1-20060209
+blood filtration,rejected,1,US20160301084A1-20161013
+controller operative,rejected,1,US20060051632A1-20060309
+decrease solubility,rejected,1,US20160211539A1-20160721
+specific dimension,rejected,1,US20160248088A1-20160825
+wastewater filtration,rejected,1,US20160301084A1-20161013
+dc current value,rejected,1,US20060093877A1-20060504
+high reversible capacity,rejected,1,US20060051674A1-20060309
+pem fuel cell application,rejected,1,US20060035119A1-20060216
+industrial manufacturing method,rejected,1,US20160172674A1-20160616
+axis perpendicular,rejected,1,US20160211562A1-20160721
+expansion joint,rejected,1,US20060078789A1-20060413
+oxygen-containing environment,rejected,1,US20170062800A1-20170302
+recessed relative,rejected,1,US20160172635A1-20160616
+return aperture,rejected,1,US20060035133A1-20060216
+small bleed,rejected,1,US20060134483A1-20060622
+small radius,rejected,1,US20160233469A1-20160811
+thin shim,rejected,1,US20060127706A1-20060615
+battery management unit control,rejected,1,US20160211494A1-20160721
+inner flat plate,rejected,1,US20060035128A1-20060216
+return flow direction,rejected,1,US20160211562A1-20160721
+positive potential end,rejected,1,US20060141306A1-20060629
+gas-tight manner,rejected,1,US20060046113A1-20060302
+removable manner,rejected,1,US20160226044A1-20160804
+saturation concentration,rejected,1,US20160211539A1-20160721
+single piece,rejected,1,US20160218378A1-20160728
+protruding end portion,rejected,1,US20160240827A1-20160818
+adjacent fuel cell bundle,rejected,1,US20060035128A1-20060216
+electrical isolating assembly,rejected,1,US20060141306A1-20060629
+constant stoichiometry,rejected,1,US20060127709A1-20060615
+curved shape,rejected,1,US20160218387A1-20160728
+longitudinal axis,rejected,1,US20060078789A1-20060413
+overall life,rejected,1,US20100183906A1-20100722
+plastic property,rejected,1,US20160141735A1-20160519
+width dimension,rejected,1,US20060046113A1-20060302
+fuel delivery mean,rejected,1,US20060046123A1-20060302
+high output voltage,rejected,1,US20060078764A1-20060413
+low flow rate,rejected,1,US20060078768A1-20060413
+metal plate workpiece,rejected,1,US20160149179A1-20160526
+reaction site,rejected,1,US20160218380A1-20160728
+microloop recirculation,rejected,1,US20060134483A1-20060622
+reactant delivery,rejected,1,US20060035133A1-20060216
+reactant feed,rejected,1,US20060127706A1-20060615
+uniform compression,rejected,1,US20060046124A1-20060302
+nonaqueous electrolyte rechargeable material,rejected,1,US20160164091A1-20160609
+metal mating surface,rejected,1,US20060121327A1-20060608
+brought back,rejected,1,US20060035119A1-20060216
+house excess,rejected,1,US20160141735A1-20160519
+production efficiency,rejected,1,US20060040173A1-20060223
+sheathing cover,rejected,1,US20160164053A1-20160609
+ambient concentration,rejected,1,US20160190637A1-20160630
+becomes flexible,rejected,1,US20160233469A1-20160811
+cycle live,rejected,1,US20100190059A1-20100729
+dcir increase,rejected,1,US20160164093A1-20160609
+increased concentration,rejected,1,US20160211539A1-20160721
+later operation,rejected,1,US20060046124A1-20060302
+preferable range,rejected,1,US20060046123A1-20060302
+absolute value,rejected,1,US20160164104A1-20160609
+startup time,rejected,1,US20060134483A1-20060622
+thermal equilibrium,rejected,1,US20060105209A1-20060518
+fluid flow communication,rejected,1,US20160141692A1-20160519
+separator plates extend,rejected,1,US20160164111A1-20160609
+crystalline matrix,rejected,1,US20160118674A1-20160428
+even distribution,rejected,1,US20060093875A1-20060504
+interior region,rejected,1,US20060046124A1-20060302
+return header,rejected,1,US20060035133A1-20060216
+volumetric change,rejected,1,US20160190570A1-20160630
+structural film layer,rejected,1,US20060029850A1-20060209
+unique battery terminal,rejected,1,US20090169978A1-20090702
+carbon monoxide gas,rejected,1,US20060035119A1-20060216
+resonance level,rejected,1,US20060071209A1-20060406
+sensor application,rejected,1,US20160301084A1-20161013
+main object,rejected,1,US20160248093A1-20160825
+sealed volume,rejected,1,US20160218404A1-20160728
+activation step,rejected,1,US20070009802A1-20070111
+compression stress,rejected,1,US20060046124A1-20060302
+high current density,rejected,1,US20060105214A1-20060518
+height direction,rejected,1,US20160172654A1-20160616
+insertion direction,rejected,1,US20160276637A1-20160922
+lateral direction,rejected,1,US20160172654A1-20160616
+precursor composite structure,rejected,1,US20070009802A1-20070111
+overall performance,rejected,1,US20060105214A1-20060518
+housing case housing,rejected,1,US20160211561A1-20160721
+air flow control,rejected,1,US20060099464A1-20060511
+increase adhesion,rejected,1,US20160141604A1-20160519
+opened state,rejected,1,US20060051632A1-20060309
+operating condition,rejected,1,US20160197367A1-20160707
+optimal ratio,rejected,1,US20170005341A1-20170105
+stamped bridge,rejected,1,US20060035133A1-20060216
+coolant begin,rejected,1,US20060134483A1-20060622
+differential value,rejected,1,US20160164104A1-20160609
+membrane process direction,rejected,1,US20060093875A1-20060504
+net amount,rejected,1,US20060046123A1-20060302
+theoretical amount,rejected,1,US20160181609A1-20160623
+voltage spike,rejected,1,US20060078764A1-20060413
+driven pump,rejected,1,US20060046108A1-20060302
+energy specification,rejected,1,US20170005377A1-20170105
+top edge,rejected,1,US20070231687A1-20071004
+outer circumference,rejected,1,US20070231687A1-20071004
+outer perimeter,rejected,1,US20060046124A1-20060302
+folding part,rejected,1,US20160240883A1-20160818
+successive part,rejected,1,US20060035119A1-20060216
+adsorbed water,rejected,1,US20160211515A1-20160721
+water condensate,rejected,1,US20060099464A1-20060511
+water dispersion,rejected,1,US20160181616A1-20160623
+water impermeability,rejected,1,US20160141582A1-20160519
+barrier sheet,rejected,1,US20160204491A1-20160714
+physical contact,rejected,1,US20060078764A1-20060413
+adjacent mea,rejected,1,US20060127706A1-20060615
+high adhesiveness,rejected,1,US20160181616A1-20160623
+high flexibility,rejected,1,US20160181616A1-20160623
+basic solution,rejected,1,US20160190579A1-20160630
+direction perpendicular,rejected,1,US20060078789A1-20060413
+elevated temperature,rejected,1,US20160211535A1-20160721
+reference temperature,rejected,1,US20160226110A1-20160804
+nickel content,rejected,1,US20160190579A1-20160630
+right end,rejected,1,US20160211561A1-20160721
+superatmospheric pressure,rejected,1,US20060105214A1-20060518
+curved path,rejected,1,US20160204397A1-20160714
+internal pore,rejected,1,US20160190570A1-20160630
+mass ratio,rejected,1,US20160164104A1-20160609
+plane extend,rejected,1,US20060046125A1-20060302
+available space,rejected,1,US20160156047A1-20160602
+grinding space,rejected,1,US20160164085A1-20160609
+non-aqueous electrode rechargeable battery,rejected,1,US20160164093A1-20160609
+structural characteristics,rejected,1,US20160190570A1-20160630
+carbon nanostructue,rejected,1,US20060051674A1-20060309
+fixed voltage,rejected,1,US20060071209A1-20060406
+reactive flow,rejected,1,US20060127706A1-20060615
+adhesive property,rejected,1,US20160172678A1-20160616
+silicon-based element,rejected,1,US20160248088A1-20160825
+corrected current,rejected,1,US20060093877A1-20060504
+initial performance,rejected,1,US20160190602A1-20160630
+recess portion,rejected,1,US20160240827A1-20160818
+vertical portion,rejected,1,US20070231687A1-20071004
+hydrophobic surface,rejected,1,US20060093735A1-20060504
+peripheral edge,rejected,1,US20160141568A1-20160519
+isovalent metal,rejected,1,US20160126539A1-20160505
+metals chosen,rejected,1,US20160126539A1-20160505
+total number,rejected,1,US20160172673A1-20160616
+screen section,rejected,1,US20060035128A1-20060216
+storage device component,rejected,1,US20160226070A1-20160804
+electrochemical fuel cell element,rejected,1,US20060046125A1-20060302
+heat exchange,rejected,1,US20160211562A1-20160721
+individual fuel cell,rejected,1,US20160204461A1-20160714
+ambient temperature,rejected,1,US20060105214A1-20060518
+peripheral speed,rejected,1,US20160211504A1-20160721
+terminal surface side,rejected,1,US20160240835A1-20160818
+excess air,rejected,1,US20060110634A1-20060525
+gas-permeable housing,rejected,1,US20160204491A1-20160714
+biosensors device,rejected,1,US20160301084A1-20161013
+diffusion segment,rejected,1,US20060134469A1-20060622
+simple process,rejected,1,US20170005341A1-20170105
+pressure differential,rejected,1,US20160164120A1-20160609
+stirred mixture,rejected,1,US20160211504A1-20160721
+system compressor,rejected,1,US20060105209A1-20060518
+bridge member,rejected,1,US20060035133A1-20060216
+receiving container,rejected,1,US20060068260A1-20060330
+cathode bone,rejected,1,US20160204444A1-20160714
+shell part,rejected,1,US20160211515A1-20160721
+electricity distribution,rejected,1,US20060088739A1-20060427
+electronic apparatus,rejected,1,US20160172657A1-20160616
+liquid electrolyte side,rejected,1,US20160164120A1-20160609
+connecting element,rejected,1,US20160218378A1-20160728
+power specification,rejected,1,US20170005377A1-20170105
+ionic communication,rejected,1,US20060029850A1-20060209
+tool body,rejected,1,US20160226044A1-20160804
+carbon material compound,rejected,1,US20060002844A1-20060105
+inner chamber,rejected,1,US20160218378A1-20160728
+anion part,rejected,1,US20060014066A1-20060119
+connecting part,rejected,1,US20060141349A1-20060629
+connector part,rejected,1,US20060141349A1-20060629
+downstream portion,rejected,1,US20160164111A1-20160609
+enclosure wall,rejected,1,US20170214013A1-20170727
+protrusion portion,rejected,1,US20160240827A1-20160818
+flat surface,rejected,1,US20060046113A1-20060302
+fine particle,rejected,1,US20160211504A1-20160721
+catalyst make,rejected,1,US20160190602A1-20160630
+compact fuel cell,rejected,1,US20060127706A1-20060615
+agent composition,rejected,1,US20160141625A1-20160519
+oxidizer assembly,rejected,1,US20060035119A1-20060216
+back side,rejected,1,US20160276637A1-20160922
+constant voltage,rejected,1,US20170092937A1-20170330
+water condensation,rejected,1,US20060099464A1-20060511
+surface layer part,rejected,1,US20160190560A1-20160630
+organic compound,rejected,1,US20160190637A1-20160630
+integrated structure,rejected,1,US20160126587A1-20160505
+resistance value,rejected,1,US20160204397A1-20160714
+intake end,rejected,1,US20060046123A1-20060302
+hydrophilic surface,rejected,1,US20060093735A1-20060504
+nonmagnetic material,rejected,1,US20060046108A1-20060302
+insulating member,rejected,1,US20160211494A1-20160721
+fabrication method,rejected,1,US20170005341A1-20170105
+discharge end,rejected,1,US20060046123A1-20060302
+structures change,rejected,1,US20160141604A1-20160519
+electrode overlap,rejected,1,US20160218387A1-20160728
+mea surface,rejected,1,US20060046124A1-20060302
+top surface,rejected,1,US20160172654A1-20160616
+alloy composition,rejected,1,US20060046144A1-20060302
+hybrid system,rejected,1,US20160164128A1-20160609
+adjacent contact,rejected,1,US20060035128A1-20060216
+adhesion layer,rejected,1,US20160276637A1-20160922
+fresh fuel,rejected,1,US20060046108A1-20060302
+inner space,rejected,1,US20070231687A1-20071004
+voltage source,rejected,1,US20060071209A1-20060406
+ionic contact,rejected,1,US20060078764A1-20060413
+flow distribution,rejected,1,US20060035133A1-20060216
+fluid channel,rejected,1,US20060141328A1-20060629
+single surface,rejected,1,US20060035133A1-20060216
+preconditioning method,rejected,1,US20060105214A1-20060518
+external pressure,rejected,1,US20160190657A1-20160630
+flow speed,rejected,1,US20160226110A1-20160804
+fewer cell,rejected,1,US20100183906A1-20100722
+air stream,rejected,1,US20060099464A1-20060511
+temperature range,rejected,1,US20160172673A1-20160616
+metal box,rejected,1,US20160211494A1-20160721
+side opposite,rejected,1,US20160211561A1-20160721
+external structure,rejected,1,US20160164053A1-20160609
+negative potential,rejected,1,US20060141306A1-20060629
+inner capacity,rejected,1,US20160164140A1-20160609
+contacting plate,rejected,1,US20160190657A1-20160630
+cathode interface,rejected,1,US20060068288A1-20060330
+cathode set,rejected,1,US20160211528A1-20160721
+supplying fuel,rejected,1,US20060172171A1-20060803
+electrical voltage,rejected,1,US20160218382A1-20160728
+retention device,rejected,1,US20060172171A1-20060803
+active region,rejected,1,US20060127706A1-20060615
+current path,rejected,1,US20160190657A1-20160630
+lithium atom,rejected,1,US20160172673A1-20160616
+adjacent plate,rejected,1,US20060035133A1-20060216
+fuel cell control,rejected,1,US20060093877A1-20060504
+high voltage,rejected,1,US20060105214A1-20060518
+power section,rejected,1,US20060099464A1-20060511
+electrochemical cell system,rejected,1,US20170207470A1-20170720
+flexible material,rejected,1,US20060141328A1-20060629
+remaining electrode,rejected,1,US20060068260A1-20060330
+adhesive layer,rejected,1,US20160276637A1-20160922
+conductive element,rejected,1,US20060046125A1-20060302
+gas supply,rejected,1,US20060051632A1-20060309
+outlet device,rejected,1,US20060172171A1-20060803
+contact pressure,rejected,1,US20060046125A1-20060302
+buffer material,rejected,1,US20160211539A1-20160721
+surface element,rejected,1,US20160218382A1-20160728
+metal element,rejected,1,US20160172673A1-20160616
+outer portion,rejected,1,US20160149214A1-20160526
+contact portion,rejected,1,US20160190657A1-20160630
+channel layer,rejected,1,US20060046113A1-20060302
+surface temperature,rejected,1,US20160233469A1-20160811
+alkaline material,rejected,1,US20160164087A1-20160609
+side surface,rejected,1,US20160141568A1-20160519
+battery performance,rejected,1,US20160248093A1-20160825
+conductive plate,rejected,1,US20160218382A1-20160728
+layer contact,rejected,1,US20060141328A1-20060629
+gas flow,rejected,1,US20060035119A1-20060216
+porous material,rejected,1,US20160156053A1-20160602
+electrodes electrode,rejected,1,US20160301084A1-20161013
+isolating assembly,rejected,1,US20060141306A1-20060629

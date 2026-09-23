@@ -1,0 +1,29 @@
+#,secondary_term,topic,subtopic,patents_with_both,share_of_primary,lift,n_patents,patents
+115,fuel cell,Fuel cells,Cell & system types,4,0.8,2.4,50,US20060105214A1-20060518 US20160156053A1-20160602 US20160218378A1-20160728 US20160301084A1-20161013
+141,diffusion layer,Fuel cells,"Stack, MEA & flow-field components",2,0.4,30.0,2,US20060134469A1-20060622 US20160156053A1-20160602
+37,redox flow battery,Batteries,Cell & battery types,1,0.2,30.0,1,US20160301084A1-20161013
+151,diffusion layer structure,Fuel cells,"Stack, MEA & flow-field components",1,0.2,30.0,1,US20060134469A1-20060622
+152,gas diffusion layer,Fuel cells,"Stack, MEA & flow-field components",1,0.2,30.0,1,US20160156053A1-20160602
+174,fuel cell single cell,Fuel cells,"Stack, MEA & flow-field components",1,0.2,30.0,1,US20160156053A1-20160602
+179,single cell,Fuel cells,"Stack, MEA & flow-field components",1,0.2,30.0,1,US20160156053A1-20160602
+256,seal body,Fuel cells,Seals & gaskets,1,0.2,30.0,1,US20160218378A1-20160728
+353,metal porous body,Electrode materials,Electrodes & current collectors,1,0.2,30.0,1,US20160156053A1-20160602
+409,membrane electrolyte,Electrolytes & separators,"Solid & polymer electrolytes, membranes",1,0.2,30.0,1,US20060134469A1-20060622
+410,unsupported tubular membrane,Electrolytes & separators,"Solid & polymer electrolytes, membranes",1,0.2,30.0,1,US20160301084A1-20161013
+462,carbon nanotube,Chemistry & materials,Carbon & nanomaterials,1,0.2,30.0,1,US20160301084A1-20161013
+575,organic solvent filtration,Processes & characterization,Synthesis & processing,1,0.2,30.0,1,US20160301084A1-20161013
+579,liquid adsorption process,Processes & characterization,Synthesis & processing,1,0.2,30.0,1,US20160301084A1-20161013
+582,gas separation process,Processes & characterization,Synthesis & processing,1,0.2,30.0,1,US20160301084A1-20161013
+703,capacitive deionization system,Systems & applications,Other electrochemical devices,1,0.2,30.0,1,US20160301084A1-20161013
+13,flow battery,Batteries,Cell & battery types,1,0.2,15.0,2,US20160301084A1-20161013
+143,bipolar plate,Fuel cells,"Stack, MEA & flow-field components",1,0.2,15.0,2,US20160218378A1-20160728
+333,electrode layer,Electrode materials,Electrodes & current collectors,1,0.2,15.0,2,US20160156053A1-20160602
+401,electrolyte membrane,Electrolytes & separators,"Solid & polymer electrolytes, membranes",1,0.2,15.0,2,US20160156053A1-20160602
+619,current density,Performance & properties,Electrochemical performance,1,0.2,15.0,2,US20060105214A1-20060518
+696,solar cell,Systems & applications,Other electrochemical devices,1,0.2,15.0,2,US20160301084A1-20161013
+697,electrochemical capacitor,Systems & applications,Other electrochemical devices,1,0.2,15.0,2,US20160301084A1-20161013
+137,gas channel,Fuel cells,"Stack, MEA & flow-field components",1,0.2,10.0,3,US20160156053A1-20160602
+372,organic solvent,Electrolytes & separators,"Liquid electrolytes, solvents & salts",1,0.2,10.0,3,US20160301084A1-20161013
+328,current collector,Electrode materials,Electrodes & current collectors,1,0.2,3.33,9,US20160301084A1-20161013
+116,fuel cell system,Fuel cells,Cell & system types,1,0.2,2.31,13,US20060105214A1-20060518
+1,secondary battery,Batteries,Cell & battery types,1,0.2,1.5,20,US20160301084A1-20161013

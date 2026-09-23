@@ -1,94 +1,149 @@
 # Technical terms from a patent export
 
-Turn an Excel or CSV patent export into a ranked list of technical terms, then
-drill into any one of them and trace every number back to a publication
-number.
+Turn an Excel or CSV patent export into a CSV of technical terms, each
+classified by topic and subtopic and traced to its publication numbers. Pick
+one as the primary term to get the other technical terms in its patents, and
+have Gemini read those patents and say what they are about.
 
-Built to run inside a Gemini Gem's code sandbox: standard library plus pandas,
-with `nltk`'s PorterStemmer used when present and a built-in stemmer standing
-in when it is not.
+Runs inside a Gemini Gem's code sandbox: the standard library plus pandas.
 
-## Three steps
+## The loop
+
+| turn | you send | you get |
+|---|---|---|
+| 1 | the export | `technical_terms.csv` — every technical term, 2–4 words, with topic, subtopic and patents — and a numbered menu |
+| 2 | a number | the secondary terms that share a patent with it, which patent each is in, and an insight on those patents |
+| 3+ | a number, `read <publication number>`, `pair <n> <m>`, `trace <term>` | another primary, one patent in depth, the patents carrying two terms, the sentence behind a count |
 
 ```python
 import trt_terms as tt
 
-state = tt.extract("export.xlsx")     # -> technical_terms.csv
-tt.drill(state, 5)                    # -> subterms_<term>.csv
-tt.trace(state, "current collector", within="secondary battery")
+state = tt.extract("export.xlsx")      # candidates, rule-cleaned
+tt.classify(state, """                 # Gemini's topic/subtopic call
+Fuel cells > Catalysts: catalyst layer; supported electrocatalyst
+""")                                   # -> technical_terms.csv, rejected_terms.csv
+
+state = tt.load()                      # any later turn
+tt.secondary(state, 134)               # -> secondary_<term>.csv
+tt.read(state, 134)                    # the patents, printed to be read
+tt.trace(state, "gas diffusion layer", within=134)
 ```
 
-**1. Extract.** Every technical term in the corpus, with the patents behind
-each one.
+## `technical_terms.csv`
 
 | column | meaning |
 |---|---|
-| `term` | display form — singular, never a gerund |
-| `stem` | grouping key, so inflections are one row |
+| `#` | the row number the user picks by; it never changes meaning |
+| `term` | display form — singular, never an -ing head |
+| `topic`, `subtopic` | Gemini's classification |
+| `n_words` | 2 to 4 |
+| `n_patents` | patents containing it; 1 is allowed |
 | `tfidf` | corpus term frequency × ln(N / document frequency) |
-| `score` | c-value × cohesion — termhood, not popularity |
-| `n_patents` | how many patents contain it |
+| `score` | C-value × cohesion — termhood, not popularity |
+| `variants` | every surface form merged into this row |
 | `patents` | every publication number it appears in |
 
-**2. Drill.** Sub-terms scoped to the patents carrying the selected term, not
-to the corpus. Adds `n_patents_with_both`, `share_of_primary`, `lift`, and the
-publication numbers behind each row. Read `lift`: a sub-term near 1 is common
-everywhere and says nothing about the primary.
+`secondary_<term>.csv` adds `patents_with_both`, `share_of_primary` and
+`lift`. `rejected_terms.csv` lists every candidate Gemini left out, so what
+was thrown away can be checked.
 
-**3. Trace.** One row per patent — publication number, the matched surface
-form, and the sentence it appeared in.
+## How the noise is removed
 
-## What counts as a technical term
+Code proposes, Gemini classifies. Code removes what grammar can decide, and
+decides it from the corpus rather than from word lists about any subject:
 
-A run of open-class words, two to four long, surviving four filters:
+- **The head must be a noun this corpus uses as one** — seen after a
+  determiner, heading a phrase, or with an attested plural. A word only seen
+  after "is" is an adjective. Removes `electrode active`, `battery pack include`.
+- **No -ing heads**, unless the -ings plural is attested (`coatings`). An
+  -ing *first* word must be a modifier (`the CUTTING blade`), not a verb
+  taking an object (`for MEASURING blood pressure`).
+- **No verbs** — conjugated in this corpus, or only ever seen after "to" or a
+  modal (`to PREVENT`, `can ADJUST`).
+- **No fragments.** A phrase that never stands alone, and is almost always
+  continued by the same word, is a piece of a longer term (`electrode active`
+  → `electrode active material`). This is what makes one-patent terms usable.
+- **Plurals folded, not stemmed.** `batteries` → `battery` because the
+  corpus contains `battery`. Porter stemming merged `phosphoric acid` with
+  `phosphorous acid` and `unit cell` with `unitized cell`, so it is gone.
+  Hyphens and spaces are equivalent.
 
-- **Stemmed**, so a term and its plural are one row. The stem is the key only;
-  the row is labelled with a readable singular form, so you see
-  `hydrogen leakage reduction` and never `hydrogen leakag reduct`.
-- **Hyphen-insensitive**, so `non-aqueous electrolyte` and
-  `nonaqueous electrolyte` are one row rather than two half-counts.
-- **No gerund heads.** `reducing leakage` is an activity, not a technology.
-  This also drops `coating`, `housing` and `bearing`, which are real nouns —
-  `drop_gerunds=False` turns it off.
-- **No verb heads**, decided by the corpus rather than a list. A word is a
-  verb here when its -ing and -ed forms both occur *and* the bare form is
-  outnumbered by its inflections. That second condition is what keeps
-  `fuel cell stack`: `stack` is conjugated somewhere in any patent corpus but
-  appears overwhelmingly as a bare noun, while `include` does not.
+The only fixed lists are English function words and the vocabulary of patent
+drafting (`comprising`, `plurality`, `embodiment`).
 
-Nothing about the subject matter is hardcoded. The only fixed vocabulary is
-`CLOSED_CLASS` — determiners, prepositions, conjunctions, pronouns,
-auxiliaries, degree adverbs — which is English grammar and identical for a
-corpus about batteries and one about crop rotation.
+Gemini then drops what grammar cannot — positions (`opposite side`),
+evaluations (`high capacity`), drafting slots (`manufacturing method`) — and
+classifies the rest. It can only select: a name the code did not propose is
+ignored.
 
-## Input
+## Measured
 
-Excel or CSV. Columns are matched loosely by name:
+Two 150-patent HUPD corpora — batteries and fuel cells (`H01M`, 2004 and
+2016) and surgical and diagnostic devices (`A61B`, 2016) — title and abstract
+only, terms seen once allowed.
 
-| needed | matched on |
-|---|---|
-| abstract *or* title | `abstract`, `summary`, `title` |
-| publication number | `publication number`, `patent number`, `patent id`, `pubno`, `id` |
-| description (optional) | `description`, `english description`, `claims` |
+**Candidate noise, blind.** 50 random candidates per extractor per corpus,
+pooled and shuffled, each labelled technical term or noise before the source
+was revealed:
 
-Without a publication-number column nothing can be traced, and `extract`
-stops rather than produce untraceable output.
+| | candidates (H01M / A61B) | noise | 95% CI |
+|---|---|---|---|
+| previous extractor | 3,878 / 4,069 | 61 / 100 | 51–70% |
+| this one | 1,251 / 1,448 | 30 / 100 | 22–40% |
+
+About six times less noise in absolute terms before Gemini sees the list. The
+labelled run predates the last two rules (conjugated `-s` verbs, quantifiers
+such as `multiple`), which only remove more.
+
+**Secondary terms per primary**, H01M corpus, after a strict curation that
+kept 705 of its 1,236 candidates:
+
+| primary appears in | primaries | median secondaries | under 15 |
+|---|---|---|---|
+| 1 patent | 561 | 7 | 91% |
+| 2 patents | 90 | 15 | 48% |
+| 3–4 patents | 27 | 22–30 | 11% |
+| 5+ patents | 27 | 51 | 0% |
+| all | 705 | 8 | 79% |
+
+So most primaries return fewer than 15. A broad one (`fuel cell`, 50 patents)
+returns hundreds; the chat shows the top 15 by shared patents and lift, and
+the CSV has every row.
 
 ## Running it as a Gem
 
-`SYSTEM_PROMPT.md` goes in the Gem's Instructions. `trt_terms.py` goes in
-Knowledge — a knowledge file is a real file in the code sandbox, so it
-survives between turns and needs no re-attaching. The export is a chat
-attachment.
+`SYSTEM_PROMPT.md` goes in the Gem's Instructions, `trt_terms.py` in its
+Knowledge. The export is a chat attachment. Code execution exists only
+inside a Gem; an ordinary Gemini chat has no Python tool and will compute
+numbers in its head.
 
-Code execution exists only inside a Gem. An ordinary Gemini chat has no Python
-tool and will compute numbers in its head and present them as program output,
-which is why the system prompt tells the model to stop rather than estimate.
+## Input
 
-## What it does not do
+Excel or CSV, columns matched loosely by name:
 
-The extractor cannot tell drafting language from technology. `present
-invention` ranks near the top of most patent corpora, because on every
-corpus-internal statistic it looks exactly like a real term: frequent,
-cohesive, multi-word. Separating the two is a judgement, and it belongs to
-whoever reads the table.
+| needed | matched on |
+|---|---|
+| publication number | `publication number(s)`, `publication_number`, `patent number`, `id` |
+| abstract or title | `abstract`, `summary`, `title` |
+| read, not mined (optional) | `claims`, `description` / `English description` |
+| optional | a date column (year), a CPC or `Technology domains` column |
+
+Terms come from title and abstract only. Claims and descriptions are shown to
+Gemini when it reads a patent but are not mined: claim language multiplies
+drafting noise, and a long description makes every term co-occur with every
+other.
+
+## Limits
+
+- The noise figures are one labeller's judgement on 200 items; the intervals
+  are wide.
+- Rules learned from the corpus need text to learn from. Under about 50
+  patents, expect more borderline candidates for Gemini to remove.
+- Sized for exports of a few hundred patents: 150 patents give about 1,300
+  candidates to classify. Past 2,000 candidates the prompt drops one-patent
+  terms (`min_patents=2`) rather than ask for a classification that will not
+  fit in one reply.
+- Patent families inflate co-occurrence: five filings of one invention
+  count as five patents. The prompt tells Gemini to say so when it sees them.
+- Topic and subtopic are Gemini's judgement and vary between runs. The CSV
+  records the result; the rejected list records what was cut.
