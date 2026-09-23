@@ -24,22 +24,22 @@ flowchart TB
     analytics["Analytics<br/>evolution, secondary terms,<br/>lift, trace to patents"]
     gui["GUI<br/>Streamlit + Plotly:<br/>keywords, primary, secondary"]
     evidence["Evidence text file"]
-    togemini[" "]
+    gem["Gemini / Gem"]
     folder["Project folder<br/>technical_terms.csv, secondary CSV / JSON,<br/>evidence text files, report"]
 
     exportfile --> engine --> analytics --> gui
     gui --> evidence
-    evidence -- "to Gemini / Gem" --> togemini
+    evidence --> gem
     engine --> folder
     analytics --> folder
     evidence --> folder
 
     classDef ext fill:#f4f4f4,stroke:#888,color:#222
     classDef file fill:#eef6ea,stroke:#3f8f29,color:#1e4a13
-    classDef hidden fill:none,stroke:none,color:transparent
+    classDef gem fill:#fdf1e6,stroke:#d1600a,color:#5a2a05
     class exportfile ext
     class evidence,folder file
-    class togemini hidden
+    class gem gem
 ```
 
 | Local app | Gemini web |
