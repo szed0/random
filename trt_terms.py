@@ -17,8 +17,9 @@ Rules are good at "this is not a noun phrase" and bad at "this is not a
 technology". So `extract` removes everything grammar can settle and prints
 what is left; the reader - Gemini, or a person - sorts the technical terms
 into topic > subtopic and `classify` writes them to the CSV. A term the reader
-leaves out is rejected, and one the corpus does not contain cannot get in:
-`classify` only accepts names that `extract` proposed.
+leaves out is rejected - it stays in the same CSV, after the technical terms,
+unnumbered and marked `rejected` - and one the corpus does not contain cannot
+get in: `classify` only accepts names that `extract` proposed.
 
 What a candidate is
 -------------------
@@ -191,7 +192,6 @@ HINTS = {
 }
 
 TERMS_CSV = "technical_terms.csv"
-REJECTED_CSV = "rejected_terms.csv"
 
 
 # --------------------------------------------------------------------------- #
@@ -767,23 +767,15 @@ def classify(state, block):
         raise SystemExit("no line of the form 'Topic > Subtopic: term; term' found")
 
     _build_rows(state)
-    _write_terms(state)
-    rejected = [mk for mk in state["order"] if mk not in state["classes"]]
-    status = ["rejected" if state["rank"][mk] <= state["shown"] else "not reviewed"
-              for mk in rejected]
-    pd.DataFrame({
-        "term": [state["groups"][mk]["display"] for mk in rejected],
-        "status": status,
-        "n_patents": [state["groups"][mk]["df"] for mk in rejected],
-        "patents": [" ".join(state["groups"][mk]["patents"]) for mk in rejected],
-    }).to_csv(REJECTED_CSV, index=False)
+    rejected = _write_terms(state)
 
-    unseen = status.count("not reviewed")
+    unseen = sum(1 for _, s in rejected if s == "not reviewed")
     print("CLASSIFIED %d technical terms, %d topics, %d subtopics -> %s"
           % (len(state["rows"]), len({t for t, _ in state["topics"]}),
              len(state["topics"]), TERMS_CSV))
-    print("REJECTED   %d candidates left out -> %s%s"
-          % (len(rejected), REJECTED_CSV,
+    print("REJECTED   %d candidates left out, listed after them in the same file "
+          "with status 'rejected'%s"
+          % (len(rejected),
              " (%d never shown - page on with candidates())" % unseen if unseen else ""))
     if unknown:
         print("IGNORED    %d names that were not candidates: %s"
@@ -838,19 +830,34 @@ def _index(state, rows):
 
 
 def _write_terms(state):
-    rows = state["rows"]
-    pd.DataFrame({
-        "#": [r["n"] for r in rows],
-        "term": [r["term"] for r in rows],
-        "topic": [r["topic"] for r in rows],
-        "subtopic": [r["subtopic"] for r in rows],
-        "n_words": [r["n_words"] for r in rows],
-        "n_patents": [r["n_patents"] for r in rows],
-        "tfidf": [r["tfidf"] for r in rows],
-        "score": [r["score"] for r in rows],
-        "variants": [" | ".join(r["variants"]) for r in rows],
-        "patents": [" ".join(r["patents"]) for r in rows],
-    }).to_csv(TERMS_CSV, index=False)
+    """One file: the technical terms, numbered and classified, then every
+    candidate left out, unnumbered, with status "rejected" - or "not
+    reviewed" if its page was never printed. Returns the left-out ones."""
+    out = []
+    for r in state["rows"]:
+        out.append({"#": str(r["n"]), "term": r["term"], "status": "technical",
+                    "topic": r["topic"], "subtopic": r["subtopic"],
+                    "n_words": r["n_words"], "n_patents": r["n_patents"],
+                    "tfidf": r["tfidf"], "score": r["score"],
+                    "variants": " | ".join(r["variants"]),
+                    "patents": " ".join(r["patents"])})
+    rejected = []
+    for mk in state["order"]:
+        if mk in state["classes"]:
+            continue
+        grp = state["groups"][mk]
+        status = "rejected" if state["rank"][mk] <= state["shown"] else "not reviewed"
+        rejected.append((mk, status))
+        out.append({"#": "", "term": grp["display"], "status": status,
+                    "topic": "", "subtopic": "",
+                    "n_words": len(grp["display"].split()), "n_patents": grp["df"],
+                    "tfidf": round(grp["tfidf"], 3), "score": round(grp["score"], 1),
+                    "variants": " | ".join(grp["variants"]),
+                    "patents": " ".join(grp["patents"])})
+    pd.DataFrame(out, columns=["#", "term", "status", "topic", "subtopic", "n_words",
+                               "n_patents", "tfidf", "score", "variants", "patents"]
+                 ).to_csv(TERMS_CSV, index=False)
+    return rejected
 
 
 def menu(state, topic=None, contains=None, per_subtopic=None):
@@ -906,6 +913,8 @@ def menu(state, topic=None, contains=None, per_subtopic=None):
 # later turns - rebuild from the CSV
 # --------------------------------------------------------------------------- #
 
+# Files this module writes, never to be mistaken for the export.
+# rejected_terms*.csv is no longer written but may linger from an older run.
 _OURS = re.compile(r"^(technical_terms|rejected_terms|secondary_)", re.IGNORECASE)
 
 
@@ -933,6 +942,10 @@ def load(export=None, terms=None, fields=("title", "abstract"), **columns):
     export = export or next(iter(_find(["**/*.xlsx", "**/*.xls", "**/*.csv"],
                                        exclude_ours=True)), None)
     t = pd.read_csv(terms, dtype=str, keep_default_na=False)
+    # rejected candidates share the file; only numbered technical rows load
+    if "status" in t.columns:
+        t = t[t["status"] == "technical"]
+    t = t[t["#"].str.strip() != ""]
     state = {"docs": [], "n_docs": 0, "columns": {}, "fields": tuple(fields)}
     if export:
         corpus = _read(export, fields=fields, **columns)

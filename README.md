@@ -11,7 +11,7 @@ Runs inside a Gemini Gem's code sandbox: the standard library plus pandas.
 
 | turn | you send | you get |
 |---|---|---|
-| 1 | the export | `technical_terms.csv` — every technical term, 2–4 words, with topic, subtopic and patents — and a numbered menu |
+| 1 | the export | `technical_terms.csv` — every technical term, 2–4 words, with topic, subtopic and patents, then the rejected candidates at the end — and a numbered menu |
 | 2 | a number | the secondary terms that share a patent with it, which patent each is in, and an insight on those patents |
 | 3+ | a number, `read <publication number>`, `pair <n> <m>`, `trace <term>` | another primary, one patent in depth, the patents carrying two terms, the sentence behind a count |
 
@@ -21,7 +21,7 @@ import trt_terms as tt
 state = tt.extract("export.xlsx")      # candidates, rule-cleaned
 tt.classify(state, """                 # Gemini's topic/subtopic call
 Fuel cells > Catalysts: catalyst layer; supported electrocatalyst
-""")                                   # -> technical_terms.csv, rejected_terms.csv
+""")                                   # -> technical_terms.csv
 
 state = tt.load()                      # any later turn
 tt.secondary(state, 134)               # -> secondary_<term>.csv
@@ -31,11 +31,16 @@ tt.trace(state, "gas diffusion layer", within=134)
 
 ## `technical_terms.csv`
 
+One file holds everything: the technical terms first, numbered and grouped
+by topic, then every candidate Gemini left out, so what was thrown away can be
+checked.
+
 | column | meaning |
 |---|---|
-| `#` | the row number the user picks by; it never changes meaning |
+| `#` | the row number the user picks by; it never changes meaning. Empty on rejected rows |
 | `term` | display form — singular, never an -ing head |
-| `topic`, `subtopic` | Gemini's classification |
+| `status` | `technical`; or `rejected` for a candidate Gemini left out (`not reviewed` if it was never shown) |
+| `topic`, `subtopic` | Gemini's classification; empty on rejected rows |
 | `n_words` | 2 to 4 |
 | `n_patents` | patents containing it; 1 is allowed |
 | `tfidf` | corpus term frequency × ln(N / document frequency) |
@@ -43,9 +48,10 @@ tt.trace(state, "gas diffusion layer", within=134)
 | `variants` | every surface form merged into this row |
 | `patents` | every publication number it appears in |
 
-`secondary_<term>.csv` adds `patents_with_both`, `share_of_primary` and
-`lift`. `rejected_terms.csv` lists every candidate Gemini left out, so what
-was thrown away can be checked.
+Rejected rows are sorted after the technical ones, most patents first. Later
+turns read only the `technical` rows, so a rejected term can never be picked
+or appear as a secondary. `secondary_<term>.csv` adds `patents_with_both`,
+`share_of_primary` and `lift`.
 
 ## How the noise is removed
 
@@ -146,4 +152,4 @@ other.
 - Patent families inflate co-occurrence: five filings of one invention
   count as five patents. The prompt tells Gemini to say so when it sees them.
 - Topic and subtopic are Gemini's judgement and vary between runs. The CSV
-  records the result; the rejected list records what was cut.
+  records the result, including the rejected rows at its end.

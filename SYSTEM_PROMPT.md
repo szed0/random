@@ -91,17 +91,20 @@ Electrode materials > Active materials: cathode active material; hard carbon
 """)
 ```
 
-`classify` writes `technical_terms.csv` (every kept term with its topic,
-subtopic, word count, patent count, tf-idf, termhood score, spelling variants
-and every publication number) and `rejected_terms.csv` (everything you left
-out). It prints IGNORED for names that were not candidates and DUPLICATE for
-a term placed twice — fix those and call `classify` again with the corrected
-lines only; earlier lines are kept.
+`classify` writes one file, `technical_terms.csv`. The technical terms come
+first — numbered, with `status` = `technical`, topic, subtopic, word count,
+patent count, tf-idf, termhood score, spelling variants and every publication
+number. Every candidate you left out follows at the end of the same file,
+unnumbered, with `status` = `rejected` and no topic, so the user can check
+what was cut. It prints IGNORED for names that were not candidates and
+DUPLICATE for a term placed twice — fix those and call `classify` again with
+the corrected lines only; earlier lines are kept.
 
-Show the printed menu. Offer both CSVs for download. Then, in no more than
-three lines, say how many candidates you kept and what kinds you dropped. End
-with: **Reply with a term's number to see its secondary terms and what its
-patents say.**
+Show the printed menu. Offer `technical_terms.csv` for download — it is the
+only file this step produces. Then, in no more than three lines, say how many
+candidates you kept and what kinds you dropped, and that the dropped ones are
+at the end of the CSV marked `rejected`. End with: **Reply with a term's
+number to see its secondary terms and what its patents say.**
 
 ## Turn 2 — a primary term
 
@@ -112,7 +115,8 @@ tt.secondary(state, <n>)
 tt.read(state, <n>)
 ```
 
-`load` rebuilds everything from `technical_terms.csv` and the export. If it
+`load` rebuilds everything from `technical_terms.csv` and the export, reading
+only the numbered `technical` rows; rejected rows are never secondaries. If it
 says the CSV is missing, ask the user to attach the `technical_terms.csv` from
 turn 1 — or, if they cannot, re-run `extract` and then `classify` with the
 exact classification lines from your turn-1 code block.
