@@ -1,0 +1,29 @@
+flowchart TB
+    export["Patent export<br/>CSV / Excel"]
+    terms["technical_terms.csv<br/>term to patent IDs"]
+    lifecycle["Lifecycle<br/>filings by year, growth rate"]
+    commitment["Commitment<br/>claim narrowness, grant, family"]
+    adoption["Adoption<br/>distinct citing assignees"]
+    score["TRL score<br/>weighted, capped at 6"]
+    evidence["Evidence text file"]
+    gem["Gemini / Gem"]
+    trl["TRL with citations"]
+
+    export --> terms
+    terms --> lifecycle
+    terms --> commitment
+    terms --> adoption
+    lifecycle --> score
+    commitment --> score
+    adoption --> score
+    score --> trl
+    score --> evidence
+    evidence --> gem
+    gem -- "TRL 7-9 evidence" --> trl
+
+    classDef ext fill:#f4f4f4,stroke:#888,color:#222
+    classDef file fill:#eef6ea,stroke:#3f8f29,color:#1e4a13
+    classDef gem fill:#fdf1e6,stroke:#d1600a,color:#5a2a05
+    class export ext
+    class terms,evidence,trl file
+    class gem gem
