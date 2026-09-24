@@ -10,8 +10,8 @@ implementation to copy behaviour from, or an experiment branching off it.
 
 | # | Workstream | Where | What it does | Status | Demonstrated |
 |---|---|---|---|---|---|
-| 1 | **Term extraction + classification** | `szed0/random` — `trt_terms.py`, `SYSTEM_PROMPT.md` | Excel/CSV in → technical terms with topic/subtopic → pick a primary → secondary terms from the same patents → trace to patent numbers | **Active — the core** | Blind noise 61% → 30% vs the 09-21 baseline; 79% of primaries have <15 secondaries, 0% for terms in 5+ patents |
-| 2 | **Architecture + diagrams** | `szed0/random` — `ARCHITECTURE.md`, `diagrams/*.mmd` | Local NLP app does all numbers; Gemini web reads patents and explains. No database, plain files in a project folder | **Active** | Three Mermaid files, each ≤9 blocks, pushed as standalone `.mmd` |
+| 1 | **Term extraction + classification** | `Z:/pr/tentlytics/random` — `trt_terms.py`, `SYSTEM_PROMPT.md` | Excel/CSV in → technical terms with topic/subtopic → pick a primary → secondary terms from the same patents → trace to patent numbers | **Active — the core** | Blind noise 61% → 30% vs the 09-21 baseline; 79% of primaries have <15 secondaries, 0% for terms in 5+ patents |
+| 2 | **Architecture + diagrams** | `Z:/pr/tentlytics/random` — `ARCHITECTURE.md`, `diagrams/*.mmd` | Local NLP app does all numbers; Gemini web reads patents and explains. No database, plain files in a project folder | **Active** | Three Mermaid files, each ≤9 blocks, pushed as standalone `.mmd` |
 | 3 | **TRL scoring** | `szed0/random` — `TRL.md`, `diagrams/trl.mmd` | Lifecycle + commitment + adoption → TRL 1–6 per term, with patent numbers behind every component | **Proposed, uncalibrated** | Lexical approach measured and rejected: 0 true positives in 400 patents. Structural signal spreads measured on the same corpus |
 | 4 | **Evidence text file** | `szed0/random` (design) | Numbers + patent text for one term, pasted into a Gem; Gemini's cited patent numbers checked back against local tables | **Designed, not built** | — |
 | 5 | **Gemini sandbox constraints** | measured in-browser | What a Gem can actually run | **Done, 2026-09-18** | Python runs **only inside a Gem**, never plain chat; a Gem knowledge file **is** a real sandbox file; pandas/sklearn/nltk/spaCy present; **spaCy has no models**; no network |
@@ -47,7 +47,7 @@ candidate for the judgement this project keeps needing from Gemini: *is this
 phrase a technical term or drafting language?*
 
 It was tested against the 1,236 curated rows in
-[`example/technical_terms.csv`](example/technical_terms.csv), on a balanced
+`technical_terms.csv`, on a balanced
 sample where chance is 50%. The labels are what Gemini decided when it curated
 that file, so this is agreement with the current pipeline, not accuracy
 against a gold set.
