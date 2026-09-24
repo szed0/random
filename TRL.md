@@ -119,6 +119,33 @@ not adoption. Count **distinct third-party assignees**, and divide by
 old. This needs the citing-patents and assignee columns; without them `A` is
 undefined and the confidence below must say so.
 
+### A classifier instead of a regex
+
+The lexical result above kills *pattern matching*, not *reading*. A calibrated
+classifier asked a typed question is a different instrument: it can answer
+"was this built and tested" from prose that never contains the word
+"prototype".
+
+`convaiinnovations/laya` (ModernBERT-large, 421M, Apache-2.0, runs on CPU) was
+tried for this. Asked of 12 `H01M` abstracts:
+
+| typed question | range over 12 patents |
+|---|---|
+| "actually built, fabricated and tested, rather than a proposed concept" | 0.48 – 0.84 |
+| "one specific engineered artefact, rather than a broad family of embodiments" | 0.53 – 0.89 |
+
+The spread is real and the direction is plausible, but it is **compressed and
+unvalidated**: most patents land between 0.6 and 0.7, and there is no labelled
+set to say whether the ordering is right. It does not partition into nine
+bands, or even into six.
+
+So it is a candidate **sub-signal for `C`**, sitting alongside claim length and
+grant status, and weighted like them. It is not a TRL classifier, and nothing
+here justifies presenting it as one. The same model scored 62.5% on the
+term-level technical-vs-drafting question against the existing curation, which
+is why it is not used for extraction either — the measurement is in
+[`PROGRESS.md`](PROGRESS.md).
+
 ## Weights, and their honest status
 
 Default `w_L = 0.4`, `w_C = 0.3`, `w_A = 0.3`.
