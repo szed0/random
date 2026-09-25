@@ -1,13 +1,16 @@
-"""Swap the sentence encoder in the original trt-pb Streamlit app.
+"""Swap the sentence encoder in the trt and trt-pb Streamlit apps.
 
-The app uses two transformer models for two different jobs, and they are not
-interchangeable:
+`trt` (Z:/pr/tentlytics/trt) has one model and swaps cleanly. `trt-pb` has that
+same encoder plus PatentBERT, and only the encoder can move. See MODELS.md.
+
+The two models, where both are present:
 
   1. a SENTENCE ENCODER (`mp_net`, a local sentence-transformers directory)
      loaded through KeyBERT. It embeds abstracts and candidate keyphrases, and
-     KeyBERT picks the top-n keyphrases per abstract by cosine similarity.
-     `mpnet_load.load_mpnet` and `TextEmbedding.mpnet_embedding` are the whole
-     of it, and ANY sentence-transformers model can take its place.
+     KeyBERT picks the top-n keyphrases per abstract by cosine similarity. In
+     `trt` the same encoder also does synonym grouping, because
+     `keywordsynonyms` calls `load_model()` itself. ANY sentence-transformers
+     model can take its place.
 
   2. PATENTBERT (`load_patent_bert.py`, a TensorFlow SavedModel) used only by
      `map_primary_to_secondary` to rank secondary keyphrases by masked-language
@@ -31,6 +34,8 @@ import sys
 # Known-good choices. Anything sentence-transformers can load also works: pass
 # a HuggingFace id or a local directory.
 MODELS = {
+    # Already on disk in sao/ - loads offline, nothing to download.
+    "minilm-local": "Z:/pr/tentlytics/sao/all-MiniLM-L6-v2",
     "minilm": "sentence-transformers/all-MiniLM-L6-v2",
     "minilm-l12": "sentence-transformers/all-MiniLM-L12-v2",
     "mpnet": "sentence-transformers/all-mpnet-base-v2",
@@ -43,6 +48,7 @@ MODELS = {
 
 # Dimensions, so a stale cache is caught rather than silently reused.
 DIMS = {
+    "Z:/pr/tentlytics/sao/all-MiniLM-L6-v2": 384,
     "sentence-transformers/all-MiniLM-L6-v2": 384,
     "sentence-transformers/all-MiniLM-L12-v2": 384,
     "sentence-transformers/all-mpnet-base-v2": 768,
